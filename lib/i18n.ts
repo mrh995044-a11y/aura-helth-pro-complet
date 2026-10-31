@@ -51,7 +51,7 @@ const en = {
 
   tab_vitals: 'Vitals',
   tab_coach: 'AuraCoach',
-  tab_meds: 'Medications',
+  tab_meds: 'Meds',
   tab_visits: 'Visits',
   tab_profile: 'Profile',
 

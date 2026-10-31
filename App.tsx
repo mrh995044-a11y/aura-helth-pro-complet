@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -98,7 +98,9 @@ export default function App() {
     <SafeAreaProvider>
       <StoreProvider>
         <StatusBar style="light" />
-        <Gate />
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#100C1A' }} edges={['top', 'right', 'bottom', 'left']}>
+          <Gate />
+        </SafeAreaView>
       </StoreProvider>
     </SafeAreaProvider>
   );

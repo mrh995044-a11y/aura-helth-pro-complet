@@ -121,7 +121,7 @@ export function VisitsScreen() {
                 </View>
                 <Txt size={12} color={C.muted}>{item.kind} · {item.city}, {item.district}</Txt>
                 <Txt size={12} color={C.faint} numberOfLines={1}>{item.specialties.slice(0, 3).join(' · ')}</Txt>
-                <View style={{ flexDirection: 'row', gap: 6 }}>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
                   {item.services.map((s) => <Pill key={s} label={s === 'physical' ? t('physical') : s === 'tele' ? t('tele') : t('lab')} color={C.violet} />)}
                   {item.emergency24 ? <Pill label={t('open_24')} color={C.rose} /> : null}
                 </View>
