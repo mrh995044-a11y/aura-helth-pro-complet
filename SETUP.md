@@ -29,13 +29,23 @@ Turn on row-level security policies before any client can read those tables. Do 
 
 ## Android
 
-iOS is not a release target. From a machine with an Expo account:
+iOS is not a release target. For a signed preview using your Expo account:
 
 ```bash
-npx eas build -p android --profile preview
+npx eas-cli@latest build -p android --profile preview
 ```
 
-`eas.json` preview profile is set to produce an APK. A signed APK cannot be compiled inside this preview environment (no Android SDK or signing key). The command above is the release path.
+The `preview` profile in `eas.json` produces an APK. Use a securely stored production upload key for store distribution.
+
+### Test-install APK without Expo credentials
+
+The **Build Android APK** GitHub Actions workflow builds without EAS credentials or repository secrets. Push this working branch, or open **Actions → Build Android APK → Run workflow** once the workflow is available on the default branch.
+
+The workflow installs the locked dependencies, typechecks, generates the native project with Expo prebuild, and compiles a release-variant APK with an embedded Hermes JavaScript bundle. It supports Android 7.0+ on ARM phones (`arm64-v8a` and `armeabi-v7a`); it is not an x86 emulator build.
+
+Download **AuraHealth-Pro-preview-APK** from the successful run. It contains `AuraHealth-Pro-preview.apk`, its SHA-256 checksum, and package metadata. The workflow checks the APK signature, package ID, native architectures, and embedded Hermes bundle before uploading it.
+
+**This is a test-install build signed with the generated Android debug certificate, not a production-signed or Play Store-ready release.** Do not use its certificate as a production upload key. Installing a build signed with a different certificate over an existing installation may require uninstalling the old app first, which can remove its local data. No signing keystore or password is uploaded as an artifact.
 
 ## Languages
 

@@ -1,0 +1,123 @@
+name: Build Android APK
+
+# A credential-free, test-install build. The generated release variant uses the
+# template's Android debug certificate, not a production upload key.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - arena/7f833db1-aura-helth-pro-complet
+    paths-ignore:
+      - '**.md'
+      - 'artifacts/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Android preview APK
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      CI: '1'
+      EXPO_NO_DOCTOR: '1'
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Set up Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: platform-tools
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+
+      - name: Install locked JavaScript dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Generate Android project and install SDK components
+        run: |
+          npx expo prebuild --platform android --clean --no-install
+          node <<'NODE'
+          const fs = require('node:fs');
+          const { spawnSync } = require('node:child_process');
+          const catalog = fs.readFileSync('node_modules/react-native/gradle/libs.versions.toml', 'utf8');
+          const versions = Object.fromEntries([...catalog.matchAll(/^(\w+)\s*=\s*"([^"]+)"/gm)].map(([, key, value]) => [key, value]));
+          const compileSdk = versions.compileSdk;
+          const buildTools = versions.buildTools;
+          const ndk = versions.ndkVersion;
+          const cmake = '3.22.1';
+          if (!compileSdk || !buildTools || !ndk) throw new Error('Android SDK versions missing from React Native catalog');
+          const packages = [`platforms;android-${compileSdk}`, `build-tools;${buildTools}`, `ndk;${ndk}`, `cmake;${cmake}`];
+          console.log('Installing:', packages.join(', '));
+          const result = spawnSync('sdkmanager', packages, { stdio: 'inherit' });
+          if (result.status !== 0) process.exit(result.status || 1);
+          NODE
+
+      - name: Build installable APK for ARM Android phones
+        working-directory: android
+        run: |
+          ./gradlew :app:assembleRelease \
+            --no-daemon \
+            --max-workers=2 \
+            -PreactNativeArchitectures=armeabi-v7a,arm64-v8a
+
+      - name: Verify and package APK
+        run: |
+          mkdir -p artifacts
+          cp android/app/build/outputs/apk/release/app-release.apk artifacts/AuraHealth-Pro-preview.apk
+          BUILD_TOOLS="$ANDROID_SDK_ROOT/build-tools/$(ls "$ANDROID_SDK_ROOT/build-tools" | sort -V | tail -1)"
+          "$BUILD_TOOLS/apksigner" verify --verbose --print-certs artifacts/AuraHealth-Pro-preview.apk
+          "$BUILD_TOOLS/aapt" dump badging artifacts/AuraHealth-Pro-preview.apk > artifacts/apk-metadata.txt
+          grep -E "^(package:|sdkVersion:|targetSdkVersion:|application-label:|native-code:)" artifacts/apk-metadata.txt
+          python3 <<'PY'
+          import zipfile
+          from pathlib import Path
+          metadata = Path('artifacts/apk-metadata.txt').read_text()
+          assert "package: name='lk.aurahealth.pro'" in metadata
+          assert "'arm64-v8a'" in metadata and "'armeabi-v7a'" in metadata
+          with zipfile.ZipFile('artifacts/AuraHealth-Pro-preview.apk') as apk:
+              bundle = apk.getinfo('assets/index.android.bundle')
+              assert bundle.file_size > 100000, 'Embedded JavaScript bundle is missing or unexpectedly small'
+              assert apk.read('assets/index.android.bundle')[:4] == bytes.fromhex('c61fbc03'), 'Expected a compiled Hermes bundle'
+              print(f'Embedded Hermes bundle: {bundle.file_size:,} bytes')
+          PY
+          cd artifacts
+          sha256sum AuraHealth-Pro-preview.apk > SHA256SUMS.txt
+
+      - name: Upload APK and verification metadata
+        uses: actions/upload-artifact@v7
+        with:
+          name: AuraHealth-Pro-preview-APK
+          path: |
+            artifacts/AuraHealth-Pro-preview.apk
+            artifacts/SHA256SUMS.txt
+            artifacts/apk-metadata.txt
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0

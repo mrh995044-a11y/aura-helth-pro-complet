@@ -68,14 +68,16 @@ export function Txt({
   color = C.text,
   weight = '500',
   style,
+  numberOfLines,
 }: {
   children: React.ReactNode;
   size?: number;
   color?: string;
   weight?: '400' | '500' | '600' | '700' | '800';
   style?: object;
+  numberOfLines?: number;
 }) {
-  return <Text style={[{ color, fontSize: size, fontWeight: weight, letterSpacing: -0.2 }, style]}>{children}</Text>;
+  return <Text numberOfLines={numberOfLines} style={[{ color, fontSize: size, fontWeight: weight, letterSpacing: -0.2 }, style]}>{children}</Text>;
 }
 
 export function Pill({ label, color = C.violet, bg }: { label: string; color?: string; bg?: string }) {
