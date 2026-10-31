@@ -122,21 +122,21 @@ export function MedsScreen() {
           </View>
         }
         renderItem={({ item }) => (
-          <Pressable onPress={() => setEditing(item)}>
-            <Card style={{ gap: 6 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Pressable accessibilityRole="button" onPress={() => setEditing(item)} style={{ flex: 1, gap: 6 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                 <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: medColors[item.colorIdx % medColors.length] }} />
-                <Txt weight="800" style={{ flex: 1 }}>{item.name}</Txt>
+                <Txt weight="800" style={{ flexShrink: 1 }}>{item.name}</Txt>
                 {item.sample ? <Pill label={t('sample')} color={C.violet} /> : null}
                 {item.stock <= item.perDose * 5 ? <Pill label={t('low_stock')} color={C.gold} /> : null}
-                <Pressable accessibilityRole="button" accessibilityLabel={`${t('delete')} ${item.name}`} hitSlop={10} onPress={(event) => { event.stopPropagation(); confirmDelete(item); }} style={{ padding: 6 }}>
-                  <Ionicons name="trash-outline" size={20} color={C.bad} />
-                </Pressable>
               </View>
               <Txt size={13} color={C.muted}>{item.strength} · {item.form} · {item.times.join(', ')}</Txt>
               <Txt size={12} color={C.faint}>{item.stock} {t('pills_left')} · {item.notes}</Txt>
-            </Card>
-          </Pressable>
+            </Pressable>
+            <Pressable accessibilityRole="button" accessibilityLabel={`${t('delete')} ${item.name}`} hitSlop={10} onPress={() => confirmDelete(item)} style={{ padding: 8 }}>
+              <Ionicons name="trash-outline" size={20} color={C.bad} />
+            </Pressable>
+          </Card>
         )}
         ListEmptyComponent={<Txt color={C.muted}>{t('empty_meds')}</Txt>}
       />

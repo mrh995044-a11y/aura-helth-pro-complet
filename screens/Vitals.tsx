@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { FlatList, Pressable, ScrollView, View } from 'react-native';
+import { Alert, FlatList, Pressable, ScrollView, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { Bars, Btn, Card, Field, Pill, PulseHeart, Sheet, Txt } from '../components/ui';
@@ -19,9 +19,8 @@ import {
   weekSeries,
 } from '../lib/health';
 import type { Metric } from '../lib/types';
-import type { Metric as MetricT } from '../lib/types';
 
-const QUICK: MetricT[] = ['bp', 'hr', 'glucose', 'sleep', 'steps', 'water', 'weight', 'spo2'];
+const QUICK: Metric[] = ['bp', 'hr', 'glucose', 'sleep', 'steps', 'water', 'weight', 'spo2'];
 // Broad input sanity limits, not clinical normal ranges.
 const INPUTS: Record<Metric, { min: number; max: number; placeholder: string; whole?: boolean }> = {
   bp: { min: 20, max: 300, placeholder: '120', whole: true },
@@ -75,7 +74,7 @@ export function VitalsScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       <FlatList
-        data={vault.vitals.slice(0, 12)}
+        data={vault.vitals}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ padding: 16, paddingBottom: 110, gap: 10 }}
         ListHeaderComponent={
@@ -215,8 +214,11 @@ export function VitalsScreen() {
                 </Txt>
               </View>
               <Pill label={t(`band_${band}` as any)} color={bandColor(band)} />
-              <Pressable onPress={() => removeVital(item.id)} hitSlop={8}>
-                <Ionicons name="trash-outline" size={16} color={C.faint} />
+              <Pressable accessibilityRole="button" accessibilityLabel={`${t('delete')} ${t(item.metric)}`} onPress={() => Alert.alert(t('delete'), t('delete_q'), [
+                { text: t('cancel'), style: 'cancel' },
+                { text: t('delete'), style: 'destructive', onPress: () => removeVital(item.id) },
+              ])} hitSlop={10} style={{ padding: 8 }}>
+                <Ionicons name="trash-outline" size={20} color={C.bad} />
               </Pressable>
             </Card>
           );
