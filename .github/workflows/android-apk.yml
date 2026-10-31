@@ -49,11 +49,6 @@ jobs:
         with:
           packages: platform-tools
 
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v6
-        with:
-          cache-provider: basic
-
       - name: Install locked JavaScript dependencies
         run: npm ci --no-audit --no-fund
 
@@ -78,6 +73,11 @@ jobs:
           const result = spawnSync('sdkmanager', packages, { stdio: 'inherit' });
           if (result.status !== 0) process.exit(result.status || 1);
           NODE
+
+      - name: Set up Gradle after native generation
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
 
       - name: Build installable APK for ARM Android phones
         working-directory: android
