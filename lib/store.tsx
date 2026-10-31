@@ -16,8 +16,9 @@ import {
   validPassword,
 } from './health';
 import { makeT, type TKey } from './i18n';
+import { createAccount, emailLogin, googleLogin, signOutFirebase } from './auth';
 
-const DB_KEY = 'aura.db.v1';
+const DB_KEY = 'aura.db.v2';
 
 interface DB {
   users: UserRec[];
@@ -77,9 +78,9 @@ interface Store {
   hasPin: boolean;
   bioAvailable: boolean;
   t: (key: TKey) => string;
-  signUp: (input: { name: string; email: string; password: string }) => { ok: boolean; error?: TKey };
-  signIn: (email: string, password: string) => { ok: boolean; error?: TKey };
-  googleLink: (email: string, name: string) => { ok: boolean; error?: TKey };
+  signUp: (input: { name: string; email: string; password: string }) => Promise<{ ok: boolean; error?: string }>;
+  signIn: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
+  googleLink: () => Promise<{ ok: boolean; error?: string }>;
   explore: () => void;
   signOut: () => void;
   setLang: (lang: Lang) => void;
@@ -133,7 +134,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           const parsed = JSON.parse(raw) as DB;
           setDb({
             users: parsed.users || [],
-            session: parsed.session || null,
+            session: null,
             vaults: parsed.vaults || {},
             settings: parsed.settings || {},
           });
@@ -142,6 +143,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             if (s?.lockEnabled) setLocked(true);
           }
         }
+        await signOutFirebase();
         const pin = await secGet('aura.pin');
         setHasPin(!!pin);
       } catch {
@@ -198,39 +200,30 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     hasPin,
     bioAvailable,
     t: makeT(settings.lang),
-    signUp: ({ name, email: raw, password }) => {
+    signUp: async ({ name, email: raw, password }) => {
       const emailNorm = raw.trim().toLowerCase();
-      if (name.trim().length < 2) return { ok: false, error: 'name_short' };
-      if (!validEmail(emailNorm)) return { ok: false, error: 'invalid_email' };
-      if (!validPassword(password)) return { ok: false, error: 'short_password' };
-      if (db.users.some((u) => u.email === emailNorm)) return { ok: false, error: 'account_exists' };
-      const user: UserRec = { email: emailNorm, name: name.trim(), provider: 'email', passHash: hashPass(emailNorm, password), createdAt: Date.now() };
-      openSession(user, true);
-      return { ok: true };
+      if (name.trim().length < 2) return { ok: false, error: 'Enter your name.' };
+      if (!validEmail(emailNorm)) return { ok: false, error: 'Enter a valid email address.' };
+      if (!validPassword(password)) return { ok: false, error: 'Use at least 8 characters including a letter and a number.' };
+      try { await createAccount(name.trim(), emailNorm, password); return { ok: true }; }
+      catch { return { ok: false, error: 'Could not create the account or send verification. Check your connection and try signing in if the account already exists.' }; }
     },
-    signIn: (raw, password) => {
-      const emailNorm = raw.trim().toLowerCase();
-      const user = db.users.find((u) => u.email === emailNorm);
-      if (!user || !user.passHash || user.passHash !== hashPass(emailNorm, password)) return { ok: false, error: 'wrong_creds' };
-      openSession(user, false);
-      if (db.settings[emailNorm]?.lockEnabled) {
-        secGet('aura.pin').then((pin) => pin && setLocked(true));
-      }
-      return { ok: true };
+    signIn: async (raw, password) => {
+      try {
+        const user = await emailLogin(raw.trim().toLowerCase(), password);
+        const emailNorm = user.email!.toLowerCase();
+        openSession({ email: emailNorm, name: user.displayName || emailNorm.split('@')[0], provider: 'email', createdAt: Date.now() }, false);
+        return { ok: true };
+      } catch (error) { return { ok: false, error: error instanceof Error && error.message.startsWith('Please verify') ? error.message : 'Sign-in failed. Check your email, password and connection.' }; }
     },
-    googleLink: (raw, name) => {
-      const emailNorm = raw.trim().toLowerCase();
-      if (!validEmail(emailNorm)) return { ok: false, error: 'invalid_email' };
-      const existing = db.users.find((u) => u.email === emailNorm);
-      if (existing && existing.provider === 'email') return { ok: false, error: 'use_password' };
-      const user: UserRec = existing || {
-        email: emailNorm,
-        name: name.trim() || emailNorm.split('@')[0],
-        provider: 'google',
-        createdAt: Date.now(),
-      };
-      openSession(user, !existing);
-      return { ok: true };
+    googleLink: async () => {
+      try {
+        const user = await googleLogin();
+        if (!user.email) throw new Error('No email address');
+        const emailNorm = user.email.toLowerCase();
+        openSession({ email: emailNorm, name: user.displayName || emailNorm.split('@')[0], provider: 'google', createdAt: Date.now() }, false);
+        return { ok: true };
+      } catch { return { ok: false, error: 'Google sign-in failed or was cancelled. Check your connection and try again.' }; }
     },
     explore: () => {
       const emailNorm = 'preview@aura.health';
@@ -239,6 +232,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       openSession(user, !existing);
     },
     signOut: () => {
+      signOutFirebase().catch(() => {});
       setLocked(false);
       setDb((d) => ({ ...d, session: null }));
     },

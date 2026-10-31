@@ -26,6 +26,7 @@ jobs:
     env:
       CI: '1'
       EXPO_NO_DOCTOR: '1'
+      EXPO_PUBLIC_AURA_AI_URL: ${{ vars.AURA_AI_URL }}
     steps:
       - name: Check out source
         uses: actions/checkout@v7
@@ -51,6 +52,14 @@ jobs:
 
       - name: Install locked JavaScript dependencies
         run: npm ci --no-audit --no-fund
+
+      - name: Install Firebase Android configuration
+        env:
+          FIREBASE_CONFIG: ${{ secrets.FIREBASE_ANDROID_CONFIG }}
+        run: |
+          if [ -z "$FIREBASE_CONFIG" ]; then echo "Missing FIREBASE_ANDROID_CONFIG repository secret"; exit 1; fi
+          printf '%s' "$FIREBASE_CONFIG" > google-services.json
+          node -e "const c=require('./google-services.json'); if(c.project_info?.project_id !== 'aurahelth-pro' || !c.client?.some(x => x.client_info?.android_client_info?.package_name === 'lk.aurahealth.pro')) throw Error('Firebase project or Android package does not match');"
 
       - name: Typecheck
         run: npx tsc --noEmit

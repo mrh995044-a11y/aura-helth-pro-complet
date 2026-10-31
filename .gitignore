@@ -43,3 +43,6 @@ yarn-error.*
 # Local APK build outputs
 /artifacts/
 *.apk
+
+# Firebase build configuration (provided through CI)
+/google-services.json

@@ -1,3 +1,4 @@
+import { getAuth, getIdToken } from '@react-native-firebase/auth';
 import type { AiMode, ChatMessage, Med, PhotoKind, Profile, Settings, Vital } from './types';
 import { classify, formatValue, formatWhen, metricUnit } from './health';
 
@@ -178,9 +179,14 @@ export async function runGemini(opts: {
     if (opts.settings.aiMode === 'proxy') {
       const url = opts.settings.proxyUrl.trim();
       if (!url) return { text: '', source: 'gemini', error: 'No proxy URL' };
+      const trustedUrl = process.env.EXPO_PUBLIC_AURA_AI_URL;
+      if (!trustedUrl || url !== trustedUrl || !trustedUrl.startsWith('https://')) return { text: '', source: 'gemini', error: 'The AI server is not configured for this build.' };
+      const user = getAuth().currentUser;
+      if (!user || !user.emailVerified) return { text: '', source: 'gemini', error: 'Sign in with a verified account to use AI.' };
+      const token = await getIdToken(user);
       const res = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ model, contents: body.contents, systemInstruction: body.systemInstruction, generationConfig: body.generationConfig }),
       });
       if (!res.ok) return { text: '', source: 'gemini', error: String(await readError(res)) };

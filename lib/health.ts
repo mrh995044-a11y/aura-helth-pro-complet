@@ -139,7 +139,7 @@ export function defaultSettings(): Settings {
     lockEnabled: false,
     biometric: false,
     aiMode: 'proxy',
-    proxyUrl: '',
+    proxyUrl: process.env.EXPO_PUBLIC_AURA_AI_URL || '',
     model: 'gemini-2.5-flash',
     aiConsent: false,
     shareVitals: true,

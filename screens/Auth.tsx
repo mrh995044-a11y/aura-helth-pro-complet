@@ -6,7 +6,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Btn, Field, PulseHeart, Txt } from '../components/ui';
 import { useStore } from '../lib/store';
 import { C } from '../lib/theme';
-import type { TKey } from '../lib/i18n';
 
 export function Welcome({ onSignIn, onSignUp, onGoogle }: { onSignIn: () => void; onSignUp: () => void; onGoogle: () => void }) {
   const { t, explore } = useStore();
@@ -97,7 +96,8 @@ export function SignIn({ onBack, onSignUp, onGoogle }: { onBack: () => void; onS
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [show, setShow] = useState(false);
-  const [err, setErr] = useState<TKey | ''>('');
+  const [err, setErr] = useState('');
+  const [busy, setBusy] = useState(false);
   return (
     <AuthShell title={t('welcome_back')} sub={t('auth_sub_in')} onBack={onBack}>
       <Field label={t('email')} value={email} onChangeText={setEmail} placeholder={t('email_ph')} keyboardType="email-address" />
@@ -115,16 +115,18 @@ export function SignIn({ onBack, onSignUp, onGoogle }: { onBack: () => void; onS
           </Pressable>
         }
       />
-      {err ? <Txt color={C.bad}>{t(err)}</Txt> : null}
+      {err ? <Txt color={C.bad}>{err}</Txt> : null}
       <Txt size={12} color={C.faint}>
         {t('secure_note')}
       </Txt>
       <Btn
         label={t('sign_in')}
         icon="log-in-outline"
-        onPress={() => {
-          const r = signIn(email, password);
-          setErr(r.ok ? '' : r.error || 'wrong_creds');
+        loading={busy}
+        onPress={async () => {
+          setBusy(true);
+          try { const r = await signIn(email, password); setErr(r.ok ? '' : r.error || 'Sign-in failed.'); }
+          finally { setBusy(false); }
         }}
       />
       <Btn label={t('continue_google')} kind="ghost" icon="logo-google" onPress={onGoogle} />
@@ -145,7 +147,8 @@ export function SignUp({ onBack, onSignIn }: { onBack: () => void; onSignIn: () 
   const [confirm, setConfirm] = useState('');
   const [agree, setAgree] = useState(false);
   const [show, setShow] = useState(false);
-  const [err, setErr] = useState<TKey | ''>('');
+  const [err, setErr] = useState('');
+  const [busy, setBusy] = useState(false);
   return (
     <AuthShell title={t('create_account')} sub={t('auth_sub_up')} onBack={onBack}>
       <Field label={t('full_name')} value={name} onChangeText={setName} placeholder={t('name_ph')} autoCapitalize="words" />
@@ -171,15 +174,20 @@ export function SignUp({ onBack, onSignIn }: { onBack: () => void; onSignIn: () 
           {t('agree')}
         </Txt>
       </Pressable>
-      {err ? <Txt color={C.bad}>{t(err)}</Txt> : null}
+      {err ? <Txt color={C.bad}>{err}</Txt> : null}
       <Btn
         label={t('create_account')}
         icon="sparkles-outline"
-        onPress={() => {
-          if (!agree) return setErr('must_agree');
-          if (password !== confirm) return setErr('mismatch');
-          const r = signUp({ name, email, password });
-          setErr(r.ok ? '' : r.error || 'invalid_email');
+        loading={busy}
+        onPress={async () => {
+          if (!agree) return setErr(t('must_agree'));
+          if (password !== confirm) return setErr(t('mismatch'));
+          setBusy(true);
+          try {
+            const r = await signUp({ name, email, password });
+            if (r.ok) { setErr('Verification email sent. Open the link in your inbox, then sign in.'); }
+            else setErr(r.error || 'Could not create account.');
+          } finally { setBusy(false); }
         }}
       />
       <Pressable onPress={onSignIn}>
@@ -193,27 +201,16 @@ export function SignUp({ onBack, onSignIn }: { onBack: () => void; onSignIn: () 
 
 export function GoogleLink({ onBack }: { onBack: () => void }) {
   const { t, googleLink } = useStore();
-  const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
-  const [err, setErr] = useState<TKey | ''>('');
+  const [err, setErr] = useState('');
+  const [busy, setBusy] = useState(false);
   return (
-    <AuthShell title={t('google_title')} sub={t('google_body')} onBack={onBack}>
-      <View style={{ backgroundColor: '#1A1408', borderRadius: 14, padding: 12, borderWidth: 1, borderColor: '#5C4A1E' }}>
-        <Txt size={13} color={C.gold}>
-          {t('google_note')}
-        </Txt>
-      </View>
-      <Field label={t('email')} value={email} onChangeText={setEmail} placeholder={t('google_email_ph')} keyboardType="email-address" />
-      <Field label={t('full_name')} value={name} onChangeText={setName} placeholder={t('name_ph')} autoCapitalize="words" />
-      {err ? <Txt color={C.bad}>{t(err)}</Txt> : null}
-      <Btn
-        label={t('continue_google')}
-        icon="logo-google"
-        onPress={() => {
-          const r = googleLink(email, name);
-          setErr(r.ok ? '' : r.error || 'invalid_email');
-        }}
-      />
+    <AuthShell title="Google sign-in" sub="Use your Google account to sign in." onBack={onBack}>
+      {err ? <Txt color={C.bad}>{err}</Txt> : null}
+      <Btn label={t('continue_google')} icon="logo-google" loading={busy} onPress={async () => {
+        setBusy(true);
+        try { const result = await googleLink(); if (!result.ok) setErr(result.error || 'Google sign-in failed.'); }
+        finally { setBusy(false); }
+      }} />
     </AuthShell>
   );
 }
