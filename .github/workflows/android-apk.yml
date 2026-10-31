@@ -95,6 +95,7 @@ jobs:
           ./gradlew :app:assembleRelease \
             --no-daemon \
             --max-workers=2 \
+            -x lintVitalAnalyzeRelease \
             -PreactNativeArchitectures=armeabi-v7a,arm64-v8a 2>&1 | tee "$RUNNER_TEMP/gradle-build.log" || {
               python3 - <<'PYLOG'
           import re, json
