@@ -54,3 +54,9 @@ English, Sinhala and Tamil. Switch from Profile. Untranslated strings fall back 
 ## Emergency
 
 1990 Suwa Seriya, or 119. The app is not an emergency service and not a diagnosis.
+
+## Medication reminders and readings
+
+In Meds, choose **Enable medication reminders** and allow notifications. Saved, non-sample medicines are scheduled daily at their listed local times; changing or deleting a medicine updates its reminders. Signing out cancels this device's medication reminders until the user signs back in. Notifications use a generic message to avoid showing medication names on the lock screen. They use the device's notification sound, not a continuous alarm. Silent mode, notification permissions, Android exact-alarm access, battery restrictions, device time changes, or other OS settings may delay or silence reminders. They must not be relied on as the only way to remember medication. Sample medicines do not generate reminders.
+
+New email accounts start without sample health records; the Explore account and the explicit Reset samples action still use clearly labelled demonstration data. Existing accounts are not automatically changed. Readings are manually entered, not measured by the app. Input limits only catch obvious errors, not diagnoses or medical advice.

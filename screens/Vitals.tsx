@@ -22,6 +22,18 @@ import type { Metric } from '../lib/types';
 import type { Metric as MetricT } from '../lib/types';
 
 const QUICK: MetricT[] = ['bp', 'hr', 'glucose', 'sleep', 'steps', 'water', 'weight', 'spo2'];
+// Broad input sanity limits, not clinical normal ranges.
+const INPUTS: Record<Metric, { min: number; max: number; placeholder: string; whole?: boolean }> = {
+  bp: { min: 20, max: 300, placeholder: '120', whole: true },
+  hr: { min: 20, max: 250, placeholder: '72', whole: true },
+  glucose: { min: 10, max: 1000, placeholder: '100' },
+  sleep: { min: 0, max: 24, placeholder: '7.5' },
+  steps: { min: 0, max: 200000, placeholder: '6500', whole: true },
+  water: { min: 0, max: 20000, placeholder: '250' },
+  weight: { min: 1, max: 500, placeholder: '70.5' },
+  spo2: { min: 1, max: 100, placeholder: '98' },
+};
+const validNumber = (text: string) => /^(?:\d+(?:\.\d+)?|\.\d+)$/.test(text.trim());
 
 export function VitalsScreen() {
   const { t, vault, session, addVital, removeVital } = useStore();
@@ -45,11 +57,12 @@ export function VitalsScreen() {
 
   const save = () => {
     const n = Number(value);
-    if (!Number.isFinite(n) || n <= 0) return setErr(t('invalid_value'));
+    const rule = INPUTS[metric];
+    if (!validNumber(value) || !Number.isFinite(n) || n < rule.min || n > rule.max || (rule.whole && !Number.isInteger(n))) return setErr(t('reading_invalid_range'));
     let n2: number | undefined;
     if (metric === 'bp') {
       n2 = Number(value2);
-      if (!Number.isFinite(n2) || n2 <= 0) return setErr(t('invalid_value'));
+      if (!validNumber(value2) || !Number.isInteger(n2) || n2 < 10 || n2 > 200 || n2 >= n) return setErr(t('reading_invalid_range'));
     }
     addVital({ metric, value: n, value2: n2, at: Date.now(), context: context.trim() || undefined, sample: false });
     setOpen(false);
@@ -95,8 +108,8 @@ export function VitalsScreen() {
             ) : null}
             <Card style={{ borderColor: urgent ? C.urgent : C.line }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Txt weight="800">{urgent ? t('pulse_urgent') : watch ? t('pulse_watch') : t('pulse_ok')}</Txt>
-                <Pill label={urgent ? t('band_urgent') : watch ? t('band_watch') : t('band_ok')} color={urgent ? C.urgent : watch ? C.gold : C.good} />
+                <Txt weight="800">{!vault.vitals.length ? t('no_readings_yet') : urgent ? t('pulse_urgent') : watch ? t('pulse_watch') : t('pulse_ok')}</Txt>
+                <Pill label={!vault.vitals.length ? t('band_none') : urgent ? t('band_urgent') : watch ? t('band_watch') : t('band_ok')} color={!vault.vitals.length ? C.muted : urgent ? C.urgent : watch ? C.gold : C.good} />
               </View>
               <Txt size={12} color={C.muted} style={{ marginTop: 6 }}>
                 {t('range_note')} {t('not_diagnosis')}
@@ -214,17 +227,17 @@ export function VitalsScreen() {
         <ScrollView contentContainerStyle={{ gap: 12 }} keyboardShouldPersistTaps="handled">
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
             {METRICS.map((m) => (
-              <Pressable key={m} onPress={() => setMetric(m)} style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 99, backgroundColor: metric === m ? C.violetDeep : C.card }}>
+              <Pressable key={m} onPress={() => { setMetric(m); setValue(''); setValue2(''); setErr(''); }} style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 99, backgroundColor: metric === m ? C.violetDeep : C.card }}>
                 <Txt size={13}>{t(m)}</Txt>
               </Pressable>
             ))}
           </ScrollView>
-          <Field label={metric === 'bp' ? t('systolic') : t('value')} value={value} onChangeText={setValue} keyboardType="decimal-pad" placeholder={metric === 'bp' ? '128' : '0'} />
+          <Field label={`${metric === 'bp' ? t('systolic') : t('value')} (${metricUnit(metric)})`} value={value} onChangeText={setValue} keyboardType="decimal-pad" placeholder={INPUTS[metric].placeholder} />
           {metric === 'bp' ? <Field label={t('diastolic')} value={value2} onChangeText={setValue2} keyboardType="decimal-pad" placeholder="84" /> : null}
           <Field label={t('context')} value={context} onChangeText={setContext} placeholder={t('context_ph')} autoCapitalize="sentences" />
           {err ? <Txt color={C.bad}>{err}</Txt> : null}
           <Txt size={12} color={C.faint}>
-            {t('range_note')}
+            {t('reading_note')}
           </Txt>
           <Btn label={t('save_reading')} onPress={save} />
         </ScrollView>

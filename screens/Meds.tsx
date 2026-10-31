@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { FlatList, Pressable, ScrollView, View } from 'react-native';
+import { Alert, FlatList, Pressable, ScrollView, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Btn, Card, Field, Pill, Sheet, Txt } from '../components/ui';
 import { useStore } from '../lib/store';
 import { C, medColors } from '../lib/theme';
 import { sameDay, startOfDay, uid } from '../lib/health';
 import type { Med } from '../lib/types';
+import { enableMedicationReminders } from '../lib/reminders';
 
 const FORMS = ['Tablet', 'Capsule', 'Liquid', 'Injection', 'Other'];
 
@@ -30,6 +31,11 @@ export function MedsScreen() {
   const { t, vault, saveMed, removeMed, markDose, undoDose } = useStore();
   const [editing, setEditing] = useState<Med | null>(null);
   const [timeDraft, setTimeDraft] = useState('20:00');
+  const [reminderBusy, setReminderBusy] = useState(false);
+  const confirmDelete = (med: Med, closeEditor = false) => Alert.alert(t('delete'), t('delete_med_q'), [
+    { text: t('cancel'), style: 'cancel' },
+    { text: t('delete'), style: 'destructive', onPress: () => { removeMed(med.id); if (closeEditor) setEditing(null); } },
+  ]);
   const today = startOfDay();
   const weekAgo = today - 6 * 86400000;
 
@@ -81,6 +87,16 @@ export function MedsScreen() {
                 <Txt size={11} color={C.faint}>{low.map((m) => m.name).join(', ') || t('none')}</Txt>
               </Card>
             </View>
+            <Btn label={t('enable_med_reminders')} icon="notifications-outline" kind="soft" loading={reminderBusy} onPress={async () => {
+              setReminderBusy(true);
+              try {
+                await enableMedicationReminders(vault.meds);
+                Alert.alert(t('reminders_title'), t('reminders_enabled'));
+              } catch (error) {
+                Alert.alert(t('reminders_title'), error instanceof Error ? error.message : t('reminders_error'));
+              } finally { setReminderBusy(false); }
+            }} />
+            <Txt size={12} color={C.faint}>{t('reminders_note')}</Txt>
             <Txt weight="800">{t('today_schedule')}</Txt>
             {rows.length === 0 ? <Txt color={C.muted}>{t('nothing_due')}</Txt> : null}
             {rows.map(({ med, slot, log }) => (
@@ -113,6 +129,9 @@ export function MedsScreen() {
                 <Txt weight="800" style={{ flex: 1 }}>{item.name}</Txt>
                 {item.sample ? <Pill label={t('sample')} color={C.violet} /> : null}
                 {item.stock <= item.perDose * 5 ? <Pill label={t('low_stock')} color={C.gold} /> : null}
+                <Pressable accessibilityRole="button" accessibilityLabel={`${t('delete')} ${item.name}`} hitSlop={10} onPress={(event) => { event.stopPropagation(); confirmDelete(item); }} style={{ padding: 6 }}>
+                  <Ionicons name="trash-outline" size={20} color={C.bad} />
+                </Pressable>
               </View>
               <Txt size={13} color={C.muted}>{item.strength} · {item.form} · {item.times.join(', ')}</Txt>
               <Txt size={12} color={C.faint}>{item.stock} {t('pills_left')} · {item.notes}</Txt>
@@ -149,7 +168,7 @@ export function MedsScreen() {
                 label={t('add')}
                 kind="soft"
                 onPress={() => {
-                  if (!/^\d{2}:\d{2}$/.test(timeDraft)) return;
+                  if (!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(timeDraft)) { Alert.alert(t('invalid_time')); return; }
                   if (!editing.times.includes(timeDraft)) setEditing({ ...editing, times: [...editing.times, timeDraft].sort() });
                 }}
               />
@@ -179,8 +198,7 @@ export function MedsScreen() {
                 label={t('delete')}
                 kind="danger"
                 onPress={() => {
-                  removeMed(editing.id);
-                  setEditing(null);
+                  confirmDelete(editing, true);
                 }}
               />
             ) : null}

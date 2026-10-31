@@ -55,13 +55,13 @@ async function secDel(key: string) {
   await AsyncStorage.removeItem(`secure.${key}`);
 }
 
-function emptyVault(name: string): Vault {
+function emptyVault(name: string, sample = false): Vault {
   return {
-    vitals: seedVitals(),
-    meds: seedMeds(),
+    vitals: sample ? seedVitals() : [],
+    meds: sample ? seedMeds() : [],
     doses: [],
-    appointments: seedAppointments(),
-    profile: seedProfile(name),
+    appointments: sample ? seedAppointments() : [],
+    profile: sample ? seedProfile(name) : { name, dob: '', sex: '', bloodGroup: '', heightCm: '', weightKg: '', conditions: '', allergies: '', emergencyName: '', emergencyPhone: '', homeDistrict: '' },
     chat: [],
   };
 }
@@ -176,10 +176,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setDb((d) => {
       const vaults = { ...d.vaults };
       const settingsMap = { ...d.settings };
-      if (!vaults[user.email]) vaults[user.email] = emptyVault(user.name);
+      if (!vaults[user.email]) vaults[user.email] = emptyVault(user.name, user.provider === 'sample');
       if (!settingsMap[user.email]) settingsMap[user.email] = defaultSettings();
       if (fresh) {
-        vaults[user.email] = emptyVault(user.name);
+        vaults[user.email] = emptyVault(user.name, user.provider === 'sample');
       }
       return { ...d, users: d.users.some((u) => u.email === user.email) ? d.users : [...d.users, user], session: user.email, vaults, settings: settingsMap };
     });
@@ -342,7 +342,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     cancelPlan: () => patchSettings((s) => ({ ...s, plan: 'free', planUntil: null })),
     resetSamples: () => {
       if (!session) return;
-      patchVault(() => emptyVault(session.name));
+      patchVault(() => emptyVault(session.name, true));
     },
     exportJson: () =>
       JSON.stringify(

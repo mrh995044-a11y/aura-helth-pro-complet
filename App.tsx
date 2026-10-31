@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -14,6 +14,7 @@ import { CoachScreen } from './screens/Coach';
 import { MedsScreen } from './screens/Meds';
 import { VisitsScreen } from './screens/Visits';
 import { ProfileScreen } from './screens/Profile';
+import { syncMedicationReminders } from './lib/reminders';
 
 const Tab = createBottomTabNavigator();
 
@@ -67,7 +68,11 @@ function Tabs() {
 }
 
 function Gate() {
-  const { ready, session, locked } = useStore();
+  const { ready, session, locked, vault } = useStore();
+  const meds = session ? vault.meds : null;
+  useEffect(() => {
+    if (ready) syncMedicationReminders(meds || []).catch((error) => console.warn('Medication reminders:', error));
+  }, [ready, session?.email, meds]);
   const [auth, setAuth] = useState<'welcome' | 'in' | 'up' | 'google'>('welcome');
 
   if (!ready) {
