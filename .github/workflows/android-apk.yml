@@ -107,8 +107,9 @@ jobs:
               elif isinstance(value, str) and len(value) >= 8: yield value
           redactions = list(strings(json.loads(Path('../google-services.json').read_text())))
           lines = Path(__import__('os').environ['RUNNER_TEMP'], 'gradle-build.log').read_text(errors='replace').splitlines()
-          for line in lines:
-              if re.search(r'(What went wrong|^> |^\* |error:|Could not|failed|FAILURE:)', line, re.I):
+          matches = [line for line in lines if re.search(r'(What went wrong|^> (?!Task )|^\* |error:|Could not|FAILED|FAILURE:)', line, re.I)]
+          for line in matches[-9:]:
+              if line:
                   for value in redactions: line = line.replace(value, '[redacted]')
                   safe = line.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')[:800]
                   print(f'::error::{safe}')
