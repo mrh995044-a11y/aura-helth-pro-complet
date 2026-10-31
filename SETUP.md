@@ -6,16 +6,15 @@ Android-first wellness journal. This preview stores accounts on the device. Gemi
 
 Hospital phones, hours, fees, sample medicines, sample readings and sample appointments are **not verified production records**. Confirm a centre before you travel. Prices in the app (LKR 390 / month, LKR 3,490 / year) are illustrative demo prices. Checkout never charges a card and never sends a card number.
 
-## Gemini proxy
+## Gemini API server (integration in progress)
 
-1. Create a key in Google AI Studio.
-2. Set `GEMINI_API_KEY` on the server only. Never commit it.
-3. Deploy `backend/api/coach.js` as a POST route (Vercel serverless, or any Node host).
-4. Optional: set `ALLOWED_ORIGIN` to your app origin.
-5. In the app: Profile → AI connection → Secure proxy → paste `https://<host>/api/coach`.
-6. Allow sharing before the first analysis. Health data is not sent until you do.
+The former Vercel proxy is disabled because it allowed unauthenticated public requests. `backend/server.js` is a Render-compatible Node service that verifies Firebase ID tokens for this project and requires a verified email. It keeps `GEMINI_API_KEY` on the server and limits requests per user in memory. A health check is available at `/health`.
 
-Direct mode stores the key on the device for development. Prefer the proxy.
+**The mobile app does not yet authenticate with Firebase or send ID tokens to this server.** Do not deploy expecting AI or Google sign-in to work until the app integration is completed and tested. The in-memory rate limit resets on restart and applies per instance; it is not sufficient protection against abuse for a public production launch. Add persistent rate limits, App Check/abuse controls, quotas and monitoring before public deployment. ID token verification does not check revocation. Review privacy, consent and deployment requirements before handling health data.
+
+When ready, deploy the `backend` directory with Node 20+, `npm ci` and `npm start`; configure `FIREBASE_PROJECT_ID` and `GEMINI_API_KEY` as environment variables in the hosting dashboard, never in source control or the APK. See `backend/package.json` for the local backend test command.
+
+Direct mode stores a user-supplied key on the device for development. Prefer a properly protected backend for shared use.
 
 ## Database
 
