@@ -90,32 +90,33 @@ jobs:
       - name: Verify and package APK
         run: |
           mkdir -p artifacts
-          cp android/app/build/outputs/apk/release/app-release.apk artifacts/AuraHealth-Pro-preview.apk
+          cp android/app/build/outputs/apk/release/app-release.apk artifacts/AuraHealth-Pro.apk
           BUILD_TOOLS="$ANDROID_SDK_ROOT/build-tools/$(ls "$ANDROID_SDK_ROOT/build-tools" | sort -V | tail -1)"
-          "$BUILD_TOOLS/apksigner" verify --verbose --print-certs artifacts/AuraHealth-Pro-preview.apk
-          "$BUILD_TOOLS/aapt" dump badging artifacts/AuraHealth-Pro-preview.apk > artifacts/apk-metadata.txt
+          "$BUILD_TOOLS/apksigner" verify --verbose --print-certs artifacts/AuraHealth-Pro.apk
+          "$BUILD_TOOLS/aapt" dump badging artifacts/AuraHealth-Pro.apk > artifacts/apk-metadata.txt
           grep -E "^(package:|sdkVersion:|targetSdkVersion:|application-label:|native-code:)" artifacts/apk-metadata.txt
           python3 <<'PY'
           import zipfile
           from pathlib import Path
           metadata = Path('artifacts/apk-metadata.txt').read_text()
           assert "package: name='lk.aurahealth.pro'" in metadata
+          assert "application-label:'AuraHealth Pro'" in metadata
           assert "'arm64-v8a'" in metadata and "'armeabi-v7a'" in metadata
-          with zipfile.ZipFile('artifacts/AuraHealth-Pro-preview.apk') as apk:
+          with zipfile.ZipFile('artifacts/AuraHealth-Pro.apk') as apk:
               bundle = apk.getinfo('assets/index.android.bundle')
               assert bundle.file_size > 100000, 'Embedded JavaScript bundle is missing or unexpectedly small'
               assert apk.read('assets/index.android.bundle')[:4] == bytes.fromhex('c61fbc03'), 'Expected a compiled Hermes bundle'
               print(f'Embedded Hermes bundle: {bundle.file_size:,} bytes')
           PY
           cd artifacts
-          sha256sum AuraHealth-Pro-preview.apk > SHA256SUMS.txt
+          sha256sum AuraHealth-Pro.apk > SHA256SUMS.txt
 
       - name: Upload APK and verification metadata
         uses: actions/upload-artifact@v7
         with:
-          name: AuraHealth-Pro-preview-APK
+          name: AuraHealth-Pro-APK
           path: |
-            artifacts/AuraHealth-Pro-preview.apk
+            artifacts/AuraHealth-Pro.apk
             artifacts/SHA256SUMS.txt
             artifacts/apk-metadata.txt
           if-no-files-found: error
