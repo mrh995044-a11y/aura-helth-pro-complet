@@ -1,0 +1,899 @@
+import type { Center } from './types';
+
+/** Reference directory compiled 2026-10-30. Not a live hospital feed. Confirm before you travel. */
+export const DIRECTORY_AS_OF = '2026-10-30';
+
+export const CENTERS: Center[] = [
+  {
+    "id": "asiri-central",
+    "name": "Asiri Central Hospital",
+    "kind": "Private Hospital",
+    "province": "Western",
+    "district": "Colombo",
+    "city": "Colombo 10",
+    "address": "114, Norris Canal Road, Colombo 10",
+    "phones": [
+      {
+        "label": "Hospital",
+        "number": "+94114665500"
+      }
+    ],
+    "website": "https://www.asirihealth.com/contact-us",
+    "hours": "OPD 24 hours · Channelling counters 07:00–21:00",
+    "emergency24": true,
+    "specialties": [
+      "Cardiology",
+      "Neurology",
+      "Oncology",
+      "Radiology",
+      "General Medicine"
+    ],
+    "services": [
+      "physical",
+      "tele",
+      "lab"
+    ],
+    "verification": "verified",
+    "verifiedOn": "2026-10-30",
+    "source": "asirihealth.com/contact-us"
+  },
+  {
+    "id": "asiri-surgical",
+    "name": "Asiri Surgical Hospital",
+    "kind": "Private Hospital",
+    "province": "Western",
+    "district": "Colombo",
+    "city": "Colombo 05",
+    "address": "21, Kirimandala Mawatha, Narahenpita, Colombo 05",
+    "phones": [
+      {
+        "label": "Hospital",
+        "number": "+94114524400"
+      }
+    ],
+    "website": "https://www.asirihealth.com/contact-us",
+    "hours": "OPD 24 hours · Channelling 07:00–22:00",
+    "emergency24": true,
+    "specialties": [
+      "Orthopaedics",
+      "Neurosurgery",
+      "Cardiothoracic Surgery",
+      "Urology",
+      "Radiology"
+    ],
+    "services": [
+      "physical",
+      "tele",
+      "lab"
+    ],
+    "verification": "verified",
+    "verifiedOn": "2026-10-30",
+    "source": "asirihealth.com/contact-us"
+  },
+  {
+    "id": "asiri-medical",
+    "name": "Asiri Medical Hospital",
+    "kind": "Private Hospital",
+    "province": "Western",
+    "district": "Colombo",
+    "city": "Colombo 05",
+    "address": "181, Kirula Road, Narahenpita, Colombo 05",
+    "phones": [
+      {
+        "label": "Hospital",
+        "number": "+94114523300"
+      }
+    ],
+    "website": "https://www.asirihealth.com/contact-us",
+    "hours": "OPD 24 hours · Channelling 07:00–22:00",
+    "emergency24": true,
+    "specialties": [
+      "General Medicine",
+      "Paediatrics",
+      "Obstetrics & Gynaecology",
+      "Dermatology",
+      "ENT"
+    ],
+    "services": [
+      "physical",
+      "tele",
+      "lab"
+    ],
+    "verification": "verified",
+    "verifiedOn": "2026-10-30",
+    "source": "asirihealth.com/contact-us"
+  },
+  {
+    "id": "asiri-kandy",
+    "name": "Asiri Hospital Kandy",
+    "kind": "Private Hospital",
+    "province": "Central",
+    "district": "Kandy",
+    "city": "Kandy",
+    "address": "No. 21, Hospital Junction, Peradeniya Road, Kandy",
+    "phones": [
+      {
+        "label": "Hospital",
+        "number": "+94814528800"
+      }
+    ],
+    "website": "https://www.asirihealth.com/contact-us",
+    "hours": "OPD 24 hours · Channelling 07:00–21:00",
+    "emergency24": true,
+    "specialties": [
+      "General Medicine",
+      "Cardiology",
+      "Paediatrics",
+      "Orthopaedics"
+    ],
+    "services": [
+      "physical",
+      "tele",
+      "lab"
+    ],
+    "verification": "verified",
+    "verifiedOn": "2026-10-30",
+    "source": "asirihealth.com/contact-us"
+  },
+  {
+    "id": "asiri-matara",
+    "name": "Asiri Hospital Matara",
+    "kind": "Private Hospital",
+    "province": "Southern",
+    "district": "Matara",
+    "city": "Matara",
+    "address": "Matara (Asiri Health network)",
+    "phones": [
+      {
+        "label": "Hospital",
+        "number": "+94417501501"
+      }
+    ],
+    "website": "https://www.asirihealth.com/contact-us",
+    "hours": "OPD 24 hours · Channelling 07:00–21:00",
+    "emergency24": true,
+    "specialties": [
+      "General Medicine",
+      "Obstetrics & Gynaecology",
+      "Paediatrics",
+      "Surgery"
+    ],
+    "services": [
+      "physical",
+      "lab"
+    ],
+    "verification": "verified",
+    "verifiedOn": "2026-10-30",
+    "source": "asirihealth.com/contact-us"
+  },
+  {
+    "id": "asiri-galle",
+    "name": "Asiri Hospital Galle",
+    "kind": "Private Hospital",
+    "province": "Southern",
+    "district": "Galle",
+    "city": "Galle",
+    "address": "Galle (Asiri Health network)",
+    "phones": [
+      {
+        "label": "Hospital",
+        "number": "+94914640640"
+      }
+    ],
+    "website": "https://www.asirihealth.com/contact-us",
+    "hours": "OPD 24 hours · Channelling 07:00–21:00",
+    "emergency24": true,
+    "specialties": [
+      "General Medicine",
+      "Cardiology",
+      "Paediatrics",
+      "Radiology"
+    ],
+    "services": [
+      "physical",
+      "lab"
+    ],
+    "verification": "verified",
+    "verifiedOn": "2026-10-30",
+    "source": "asirihealth.com/contact-us"
+  },
+  {
+    "id": "asiri-aoi",
+    "name": "Asiri AOI Cancer Centre",
+    "kind": "Private Hospital",
+    "province": "Western",
+    "district": "Colombo",
+    "city": "Colombo 05",
+    "address": "Kirimandala Mawatha, Narahenpita, Colombo 05",
+    "phones": [
+      {
+        "label": "Centre",
+        "number": "+94114524466"
+      }
+    ],
+    "website": "https://www.asirihealth.com/contact-us",
+    "hours": "Mon–Sat 07:00–20:00",
+    "emergency24": false,
+    "specialties": [
+      "Oncology",
+      "Radiotherapy",
+      "Nuclear Medicine"
+    ],
+    "services": [
+      "physical",
+      "lab"
+    ],
+    "verification": "verified",
+    "verifiedOn": "2026-10-30",
+    "source": "asirihealth.com/contact-us"
+  },
+  {
+    "id": "asiri-labs",
+    "name": "Asiri Laboratories",
+    "kind": "Laboratory",
+    "province": "Western",
+    "district": "Colombo",
+    "city": "Colombo 05",
+    "address": "Narahenpita, Colombo 05 (island-wide collection centres)",
+    "phones": [
+      {
+        "label": "Laboratories",
+        "number": "+94114523355"
+      }
+    ],
+    "website": "https://www.asirihealth.com/contact-us",
+    "hours": "Mon–Sun 06:30–20:00 · Home visits by appointment",
+    "emergency24": false,
+    "specialties": [
+      "Clinical Chemistry",
+      "Haematology",
+      "Microbiology",
+      "Home sample collection"
+    ],
+    "services": [
+      "lab"
+    ],
+    "verification": "verified",
+    "verifiedOn": "2026-10-30",
+    "source": "asirihealth.com/contact-us"
+  },
+  {
+    "id": "durdans",
+    "name": "Durdans Hospital",
+    "kind": "Private Hospital",
+    "province": "Western",
+    "district": "Colombo",
+    "city": "Colombo 03",
+    "address": "3, Alfred Place, Colombo 03",
+    "phones": [
+      {
+        "label": "Hospital",
+        "number": "+94112140000"
+      }
+    ],
+    "website": "https://durdans.com/contact-us/",
+    "hours": "Emergency 24 hours · Channelling 07:00–22:00",
+    "emergency24": true,
+    "specialties": [
+      "Cardiology",
+      "Cardiothoracic Surgery",
+      "Nephrology",
+      "Radiology",
+      "Paediatrics"
+    ],
+    "services": [
+      "physical",
+      "tele",
+      "lab"
+    ],
+    "verification": "verified",
+    "verifiedOn": "2026-10-30",
+    "source": "durdans.com/contact-us"
+  },
+  {
+    "id": "lanka-hospitals",
+    "name": "Lanka Hospitals",
+    "kind": "Private Hospital",
+    "province": "Western",
+    "district": "Colombo",
+    "city": "Colombo 05",
+    "address": "578, Elvitigala Mawatha, Narahenpita, Colombo 05",
+    "phones": [
+      {
+        "label": "General",
+        "number": "+94115430000"
+      },
+      {
+        "label": "Channelling",
+        "number": "+94117145145"
+      },
+      {
+        "label": "Emergency",
+        "number": "1566"
+      }
+    ],
+    "website": "https://www.lankahospitals.com/contact-us/",
+    "hours": "Emergency 24 hours · Channelling 07:00–22:00",
+    "emergency24": true,
+    "specialties": [
+      "Cardiology",
+      "Transplant Surgery",
+      "Neurology",
+      "Oncology",
+      "Gastroenterology"
+    ],
+    "services": [
+      "physical",
+      "tele",
+      "lab"
+    ],
+    "verification": "verified",
+    "verifiedOn": "2026-10-30",
+    "source": "lankahospitals.com/contact-us"
+  },
+  {
+    "id": "hemas-wattala",
+    "name": "Hemas Hospital Wattala",
+    "kind": "Private Hospital",
+    "province": "Western",
+    "district": "Gampaha",
+    "city": "Wattala",
+    "address": "389, Negombo Road, Welisara, Wattala",
+    "phones": [
+      {
+        "label": "Hospital",
+        "number": "+94117888888"
+      }
+    ],
+    "website": "https://hemashospitals.com/hospitals/wattala/",
+    "hours": "Emergency 24 hours · Channelling 07:00–22:00",
+    "emergency24": true,
+    "specialties": [
+      "General Medicine",
+      "Obstetrics & Gynaecology",
+      "Paediatrics",
+      "Orthopaedics",
+      "ENT"
+    ],
+    "services": [
+      "physical",
+      "tele",
+      "lab"
+    ],
+    "verification": "verified",
+    "verifiedOn": "2026-10-30",
+    "source": "hemashospitals.com/hospitals/wattala"
+  },
+  {
+    "id": "hemas-thalawathugoda",
+    "name": "Hemas Hospital Thalawathugoda",
+    "kind": "Private Hospital",
+    "province": "Western",
+    "district": "Colombo",
+    "city": "Thalawathugoda",
+    "address": "652, Pannipitiya Road, Thalawathugoda",
+    "phones": [
+      {
+        "label": "Hospital (confirm)",
+        "number": "+94117888888"
+      }
+    ],
+    "website": "https://hemashospitals.com/hospitals/thalawathugoda/",
+    "hours": "Emergency 24 hours · Channelling 07:00–22:00",
+    "emergency24": true,
+    "specialties": [
+      "General Medicine",
+      "Paediatrics",
+      "Dermatology",
+      "Physiotherapy"
+    ],
+    "services": [
+      "physical",
+      "tele",
+      "lab"
+    ],
+    "verification": "listing",
+    "note": "Group hotline shown. Confirm the branch direct line on the Hemas website before travelling.",
+    "source": "hemashospitals.com"
+  },
+  {
+    "id": "nawaloka-colombo",
+    "name": "Nawaloka Hospitals PLC",
+    "kind": "Private Hospital",
+    "province": "Western",
+    "district": "Colombo",
+    "city": "Colombo 02",
+    "address": "23, Deshamanya H. K. Dharmadasa Mawatha, Colombo 02",
+    "phones": [
+      {
+        "label": "Hospital (listing)",
+        "number": "+94115777777"
+      }
+    ],
+    "website": "https://www.nawaloka.com/contactus/",
+    "hours": "Emergency 24 hours · Channelling 07:00–22:00",
+    "emergency24": true,
+    "specialties": [
+      "Cardiology",
+      "Neurology",
+      "Orthopaedics",
+      "Oncology",
+      "General Surgery"
+    ],
+    "services": [
+      "physical",
+      "tele",
+      "lab"
+    ],
+    "verification": "listing",
+    "note": "Address matches the official contact page; the hotline comes from public directory listings. Confirm before use.",
+    "source": "nawaloka.com/contactus + public listings"
+  },
+  {
+    "id": "nawaloka-negombo",
+    "name": "Nawaloka Hospital Negombo",
+    "kind": "Private Hospital",
+    "province": "Western",
+    "district": "Gampaha",
+    "city": "Negombo",
+    "address": "Negombo (Nawaloka network)",
+    "phones": [
+      {
+        "label": "Hospital (confirm)",
+        "number": "+94115777777"
+      }
+    ],
+    "website": "https://www.nawaloka.com/contactus/",
+    "hours": "Channelling 08:00–21:00",
+    "emergency24": false,
+    "specialties": [
+      "General Medicine",
+      "Paediatrics",
+      "Obstetrics & Gynaecology"
+    ],
+    "services": [
+      "physical",
+      "lab"
+    ],
+    "verification": "unverified",
+    "note": "Branch line not confirmed. Use the group hotline or the official website."
+  },
+  {
+    "id": "nhsl",
+    "name": "National Hospital of Sri Lanka",
+    "kind": "Government Hospital",
+    "province": "Western",
+    "district": "Colombo",
+    "city": "Colombo 10",
+    "address": "Regent Street, Colombo 10",
+    "phones": [
+      {
+        "label": "General (confirm)",
+        "number": "+94112691111"
+      }
+    ],
+    "website": "https://nhsl.health.gov.lk/",
+    "hours": "Accident Service 24 hours · OPD 24 hours · Clinics 08:00–16:00",
+    "emergency24": true,
+    "specialties": [
+      "Accident & Emergency",
+      "Neurosurgery",
+      "Cardiology",
+      "General Medicine",
+      "Surgery"
+    ],
+    "services": [
+      "physical",
+      "lab"
+    ],
+    "verification": "unverified",
+    "note": "State hospital reference entry. Confirm the current switchboard number before relying on it."
+  },
+  {
+    "id": "lrh",
+    "name": "Lady Ridgeway Hospital for Children",
+    "kind": "Government Hospital",
+    "province": "Western",
+    "district": "Colombo",
+    "city": "Colombo 08",
+    "address": "Danister De Silva Mawatha, Borella, Colombo 08",
+    "phones": [
+      {
+        "label": "General (confirm)",
+        "number": "+94112693711"
+      }
+    ],
+    "website": "https://www.lrh.health.gov.lk/",
+    "hours": "Emergency 24 hours · Clinics 08:00–16:00",
+    "emergency24": true,
+    "specialties": [
+      "Paediatrics",
+      "Paediatric Surgery",
+      "Neonatology",
+      "Paediatric Cardiology"
+    ],
+    "services": [
+      "physical",
+      "lab"
+    ],
+    "verification": "unverified",
+    "note": "State hospital reference entry. Confirm before relying on it."
+  },
+  {
+    "id": "castle-street",
+    "name": "Castle Street Hospital for Women",
+    "kind": "Government Hospital",
+    "province": "Western",
+    "district": "Colombo",
+    "city": "Colombo 08",
+    "address": "Castle Street, Borella, Colombo 08",
+    "phones": [
+      {
+        "label": "General (confirm)",
+        "number": "+94112691111"
+      }
+    ],
+    "hours": "Emergency 24 hours · Clinics 08:00–16:00",
+    "emergency24": true,
+    "specialties": [
+      "Obstetrics & Gynaecology",
+      "Neonatology",
+      "Fertility"
+    ],
+    "services": [
+      "physical",
+      "lab"
+    ],
+    "verification": "unverified",
+    "note": "Reference entry only — number not confirmed."
+  },
+  {
+    "id": "kandy-th",
+    "name": "Teaching Hospital Kandy",
+    "kind": "Government Hospital",
+    "province": "Central",
+    "district": "Kandy",
+    "city": "Kandy",
+    "address": "William Gopallawa Mawatha, Kandy",
+    "phones": [
+      {
+        "label": "General (confirm)",
+        "number": "+94812233337"
+      }
+    ],
+    "hours": "Emergency 24 hours · Clinics 08:00–16:00",
+    "emergency24": true,
+    "specialties": [
+      "Accident & Emergency",
+      "General Medicine",
+      "Surgery",
+      "Cardiology"
+    ],
+    "services": [
+      "physical",
+      "lab"
+    ],
+    "verification": "unverified",
+    "note": "Reference entry only — confirm the switchboard before relying on it."
+  },
+  {
+    "id": "suwasevana-kandy",
+    "name": "Suwasevana Hospital",
+    "kind": "Private Hospital",
+    "province": "Central",
+    "district": "Kandy",
+    "city": "Kandy",
+    "address": "2, Sangaraja Mawatha, Kandy",
+    "phones": [
+      {
+        "label": "Channelling (confirm)",
+        "number": "+94812233351"
+      }
+    ],
+    "hours": "Channelling 07:00–21:00 · Laboratory 06:30–20:00",
+    "emergency24": false,
+    "specialties": [
+      "General Medicine",
+      "Paediatrics",
+      "Dermatology",
+      "Cardiology"
+    ],
+    "services": [
+      "physical",
+      "lab"
+    ],
+    "verification": "unverified",
+    "note": "Carried over reference data — confirm before travelling."
+  },
+  {
+    "id": "karapitiya",
+    "name": "Teaching Hospital Karapitiya",
+    "kind": "Government Hospital",
+    "province": "Southern",
+    "district": "Galle",
+    "city": "Karapitiya",
+    "address": "Karapitiya, Galle",
+    "phones": [
+      {
+        "label": "General (confirm)",
+        "number": "+94912232560"
+      }
+    ],
+    "hours": "Emergency 24 hours · Clinics 08:00–16:00",
+    "emergency24": true,
+    "specialties": [
+      "Accident & Emergency",
+      "Neurosurgery",
+      "Oncology",
+      "General Medicine"
+    ],
+    "services": [
+      "physical",
+      "lab"
+    ],
+    "verification": "unverified",
+    "note": "Reference entry only — confirm before relying on it."
+  },
+  {
+    "id": "jaffna-th",
+    "name": "Teaching Hospital Jaffna",
+    "kind": "Government Hospital",
+    "province": "Northern",
+    "district": "Jaffna",
+    "city": "Jaffna",
+    "address": "Hospital Road, Jaffna",
+    "phones": [
+      {
+        "label": "General (confirm)",
+        "number": "+94212222261"
+      }
+    ],
+    "hours": "Emergency 24 hours · Clinics 08:00–16:00",
+    "emergency24": true,
+    "specialties": [
+      "Accident & Emergency",
+      "General Medicine",
+      "Paediatrics",
+      "Surgery"
+    ],
+    "services": [
+      "physical",
+      "lab"
+    ],
+    "verification": "unverified",
+    "note": "Reference entry only — confirm before relying on it."
+  },
+  {
+    "id": "batticaloa-th",
+    "name": "Teaching Hospital Batticaloa",
+    "kind": "Government Hospital",
+    "province": "Eastern",
+    "district": "Batticaloa",
+    "city": "Batticaloa",
+    "address": "Hospital Road, Batticaloa",
+    "phones": [
+      {
+        "label": "General (confirm)",
+        "number": "+94652222261"
+      }
+    ],
+    "hours": "Emergency 24 hours · Clinics 08:00–16:00",
+    "emergency24": true,
+    "specialties": [
+      "Accident & Emergency",
+      "General Medicine",
+      "Obstetrics & Gynaecology"
+    ],
+    "services": [
+      "physical",
+      "lab"
+    ],
+    "verification": "unverified",
+    "note": "Reference entry only — confirm before relying on it."
+  },
+  {
+    "id": "kurunegala-th",
+    "name": "Teaching Hospital Kurunegala",
+    "kind": "Government Hospital",
+    "province": "North Western",
+    "district": "Kurunegala",
+    "city": "Kurunegala",
+    "address": "Colombo Road, Kurunegala",
+    "phones": [
+      {
+        "label": "General (confirm)",
+        "number": "+94372222261"
+      }
+    ],
+    "hours": "Emergency 24 hours · Clinics 08:00–16:00",
+    "emergency24": true,
+    "specialties": [
+      "Accident & Emergency",
+      "Cardiology",
+      "General Medicine",
+      "Surgery"
+    ],
+    "services": [
+      "physical",
+      "lab"
+    ],
+    "verification": "unverified",
+    "note": "Reference entry only — confirm before relying on it."
+  },
+  {
+    "id": "anuradhapura-th",
+    "name": "Teaching Hospital Anuradhapura",
+    "kind": "Government Hospital",
+    "province": "North Central",
+    "district": "Anuradhapura",
+    "city": "Anuradhapura",
+    "address": "Anuradhapura",
+    "phones": [
+      {
+        "label": "General (confirm)",
+        "number": "+94252222261"
+      }
+    ],
+    "hours": "Emergency 24 hours · Clinics 08:00–16:00",
+    "emergency24": true,
+    "specialties": [
+      "Accident & Emergency",
+      "Nephrology",
+      "General Medicine"
+    ],
+    "services": [
+      "physical",
+      "lab"
+    ],
+    "verification": "unverified",
+    "note": "Reference entry only — confirm before relying on it."
+  },
+  {
+    "id": "badulla-pgh",
+    "name": "Provincial General Hospital Badulla",
+    "kind": "Government Hospital",
+    "province": "Uva",
+    "district": "Badulla",
+    "city": "Badulla",
+    "address": "Hospital Road, Badulla",
+    "phones": [
+      {
+        "label": "General (confirm)",
+        "number": "+94552222261"
+      }
+    ],
+    "hours": "Emergency 24 hours · Clinics 08:00–16:00",
+    "emergency24": true,
+    "specialties": [
+      "Accident & Emergency",
+      "General Medicine",
+      "Paediatrics"
+    ],
+    "services": [
+      "physical",
+      "lab"
+    ],
+    "verification": "unverified",
+    "note": "Reference entry only — confirm before relying on it."
+  },
+  {
+    "id": "ratnapura-th",
+    "name": "Teaching Hospital Ratnapura",
+    "kind": "Government Hospital",
+    "province": "Sabaragamuwa",
+    "district": "Ratnapura",
+    "city": "Ratnapura",
+    "address": "Ratnapura",
+    "phones": [
+      {
+        "label": "General (confirm)",
+        "number": "+94452222261"
+      }
+    ],
+    "hours": "Emergency 24 hours · Clinics 08:00–16:00",
+    "emergency24": true,
+    "specialties": [
+      "Accident & Emergency",
+      "General Medicine",
+      "Surgery"
+    ],
+    "services": [
+      "physical",
+      "lab"
+    ],
+    "verification": "unverified",
+    "note": "Reference entry only — confirm before relying on it."
+  },
+  {
+    "id": "lhd-labs",
+    "name": "Lanka Hospitals Diagnostics",
+    "kind": "Laboratory",
+    "province": "Western",
+    "district": "Colombo",
+    "city": "Colombo 05",
+    "address": "578, Elvitigala Mawatha, Narahenpita, Colombo 05",
+    "phones": [
+      {
+        "label": "Laboratory",
+        "number": "+94115430000"
+      }
+    ],
+    "website": "https://www.lhd.lk/contact/",
+    "hours": "Mon–Sun 06:30–21:00 · Home collection on request",
+    "emergency24": false,
+    "specialties": [
+      "Clinical Chemistry",
+      "Imaging",
+      "Genetics",
+      "Home sample collection"
+    ],
+    "services": [
+      "lab"
+    ],
+    "verification": "verified",
+    "verifiedOn": "2026-10-30",
+    "source": "lankahospitals.com / lhd.lk"
+  },
+  {
+    "id": "doc990",
+    "name": "Doc990 Tele-channelling",
+    "kind": "Teleconsultation",
+    "province": "Island-wide",
+    "district": "Island-wide",
+    "city": "Online",
+    "address": "Online audio/video consultations with Sri Lankan specialists",
+    "phones": [
+      {
+        "label": "Hotline (confirm)",
+        "number": "990"
+      }
+    ],
+    "website": "https://www.doc.lk/",
+    "hours": "Booking 24 hours · Sessions per doctor schedule",
+    "emergency24": false,
+    "specialties": [
+      "General Medicine",
+      "Dermatology",
+      "Psychiatry",
+      "Paediatrics",
+      "Nutrition"
+    ],
+    "services": [
+      "tele"
+    ],
+    "verification": "listing",
+    "note": "Tele-channelling aggregator. Confirm the hotline and fees on doc.lk.",
+    "source": "doc.lk"
+  },
+  {
+    "id": "echannelling",
+    "name": "eChannelling (SLT Mobitel)",
+    "kind": "Channelling Centre",
+    "province": "Island-wide",
+    "district": "Island-wide",
+    "city": "Online",
+    "address": "Island-wide doctor channelling network",
+    "phones": [
+      {
+        "label": "Hotline (confirm)",
+        "number": "1225"
+      }
+    ],
+    "website": "https://www.echannelling.com/",
+    "hours": "Booking 24 hours",
+    "emergency24": false,
+    "specialties": [
+      "All major specialties"
+    ],
+    "services": [
+      "physical",
+      "tele"
+    ],
+    "verification": "listing",
+    "note": "Channelling aggregator. Confirm the hotline on echannelling.com.",
+    "source": "echannelling.com"
+  }
+];
+
+export const CENTER_KINDS = [...new Set(CENTERS.map(c => c.kind))];
+export const PROVINCES = [...new Set(CENTERS.map(c => c.province))];
