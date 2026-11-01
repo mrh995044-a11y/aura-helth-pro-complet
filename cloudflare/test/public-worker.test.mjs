@@ -47,7 +47,7 @@ test('Firebase signatures, verified account, quota and payload are enforced', as
   assert.equal((await post(validToken, body, { ...env, AI_QUOTA:undefined })).status, 503);
   const result = await post(validToken);
   assert.equal(result.status, 200); assert.equal((await result.json()).text, 'Test response'); assert.equal(upstreamCalls, 2);
-  assert.equal((await post(validToken, body, { ...env, AI_QUOTA: { idFromName: () => 'global', get: () => ({ fetch: async () => new Response(null, { status: 429 }) }) } })).status, 429);
+  assert.equal((await post(validToken, body, { ...env, AI_QUOTA: { idFromName: () => 'global', get: () => ({ fetch: async () => Response.json({ reason: 'user' }, { status: 429 }) }) } })).status, 429);
   assert.equal(upstreamCalls, 2);
   for (const [status, expected] of [[400, 'HTTP 400'], [403, 'HTTP 403'], [404, 'model'], [429, 'quota'], [500, 'HTTP 500']]) {
     upstreamStatus = status;
@@ -73,10 +73,14 @@ test('durable quota enforces per-user and shared daily caps', async () => {
   const storage = { transaction: fn => fn({ get: async () => saved ? structuredClone(saved) : undefined, put: async (_key, value) => { saved = structuredClone(value); } }) };
   const quota = new AiQuota({ storage });
   const call = uid => quota.fetch(new Request('https://quota.internal/check', { method:'POST', body:JSON.stringify({ uid }) }));
-  for (let i = 0; i < 10; i++) assert.equal((await call('first')).status, 204);
-  assert.equal((await call('first')).status, 429);
-  for (let user = 1; user <= 9; user++) for (let i = 0; i < 10; i++) assert.equal((await call(`user-${user}`)).status, 204);
-  assert.equal((await call('another')).status, 429);
+  for (let i = 0; i < 30; i++) assert.equal((await call('first')).status, 204);
+  const userLimit = await call('first');
+  assert.equal(userLimit.status, 429);
+  assert.equal((await userLimit.json()).reason, 'user');
+  for (let user = 1; user <= 7; user++) for (let i = 0; i < 10; i++) assert.equal((await call(`user-${user}`)).status, 204);
+  const sharedLimit = await call('another');
+  assert.equal(sharedLimit.status, 429);
+  assert.equal((await sharedLimit.json()).reason, 'shared');
   saved.day = '2000-01-01';
   assert.equal((await call('first')).status, 204);
 });

@@ -93,7 +93,10 @@ export default {
       const quota = await stub.fetch('https://quota.internal/check', {
         method: 'POST', body: JSON.stringify({ uid: user.sub }),
       });
-      if (quota.status === 429) return response(429, { error: 'AI usage limit reached. Please try again tomorrow.' });
+      if (quota.status === 429) {
+        const { reason } = await quota.json();
+        return response(429, { error: reason === 'user' ? 'Your daily AI limit was reached. Try again after 5:30 a.m. Sri Lanka time.' : 'The shared daily AI limit was reached. Try again after 5:30 a.m. Sri Lanka time.' });
+      }
       if (!quota.ok) throw new Error('Quota unavailable');
     } catch { return response(503, { error: 'AI service temporarily unavailable.' }); }
     try {
@@ -132,16 +135,17 @@ export class AiQuota {
     try { ({ uid } = await request.json()); } catch { return new Response(null, { status: 400 }); }
     if (typeof uid !== 'string' || !uid || uid.length > 128) return new Response(null, { status: 400 });
     const day = new Date().toISOString().slice(0, 10);
-    const allowed = await this.state.storage.transaction(async txn => {
+    const reason = await this.state.storage.transaction(async txn => {
       const record = await txn.get('quota');
       const quota = record?.day === day ? record : { day, total: 0, users: {} };
       const userKey = `uid:${uid}`;
       const count = quota.users[userKey] || 0;
-      if (quota.total >= 100 || count >= 10) return false;
+      if (quota.total >= 100) return 'shared';
+      if (count >= 30) return 'user';
       quota.total++; quota.users[userKey] = count + 1;
       await txn.put('quota', quota);
-      return true;
+      return null;
     });
-    return new Response(null, { status: allowed ? 204 : 429 });
+    return reason ? Response.json({ reason }, { status: 429 }) : new Response(null, { status: 204 });
   }
 }
