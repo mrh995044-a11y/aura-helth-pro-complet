@@ -16,7 +16,7 @@ function decode64(s) {
   const base64 = s.replace(/-/g, '+').replace(/_/g, '/');
   return Uint8Array.from(atob(base64 + '='.repeat((4 - base64.length % 4) % 4)), c => c.charCodeAt(0));
 }
-function decodeJson(s) { return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(decode64(s))); }
+function decodeJson(s) { return JSON.parse(new TextDecoder('utf-8', { fatal: true, ignoreBOM: false }).decode(decode64(s))); }
 async function getKeys() {
   if (keysCache && Date.now() < keysExpiry) return keysCache;
   const res = await fetch(KEYS_URL, { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(10000) });
@@ -62,7 +62,7 @@ async function readLimited(req) {
   }
   const all = new Uint8Array(total); let offset = 0;
   for (const chunk of chunks) { all.set(chunk, offset); offset += chunk.length; }
-  return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(all));
+  return JSON.parse(new TextDecoder('utf-8', { fatal: true, ignoreBOM: false }).decode(all));
 }
 function validContents(contents) {
   if (!Array.isArray(contents) || contents.length !== 1 || contents[0]?.role !== 'user') return false;
