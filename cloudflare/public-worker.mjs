@@ -102,12 +102,19 @@ export default {
         body: JSON.stringify({ contents: body.contents, systemInstruction: { parts: [{ text: SYSTEM }] }, generationConfig: { temperature: 0.4, maxOutputTokens: 900 } }),
         signal: AbortSignal.timeout(30000),
       });
-      if (!upstream.ok) return response(502, { error: 'AI service unavailable. Please try again later.' });
+      if (!upstream.ok) {
+        // Return only the HTTP status category. Never disclose provider bodies,
+        // which may include sensitive diagnostics or request information.
+        if (upstream.status === 429) return response(502, { error: 'Gemini quota or rate limit reached. Try again later.' });
+        if (upstream.status === 400 || upstream.status === 401 || upstream.status === 403) return response(502, { error: `Gemini rejected the request (HTTP ${upstream.status}). Check the server API key and Gemini access.` });
+        if (upstream.status === 404) return response(502, { error: 'The Gemini model was not found or is unavailable for this key.' });
+        return response(502, { error: `Gemini service error (HTTP ${upstream.status}). Try again later.` });
+      }
       const data = await upstream.json();
       const text = (data.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join('');
       if (!text) return response(502, { error: 'No AI response was available.' });
       return response(200, { text, model: MODEL });
-    } catch { return response(502, { error: 'AI service unavailable. Please try again later.' }); }
+    } catch { return response(502, { error: 'Could not reach Gemini. Please try again later.' }); }
   },
 };
 

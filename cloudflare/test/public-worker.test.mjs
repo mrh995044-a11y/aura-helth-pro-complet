@@ -18,10 +18,12 @@ test('Firebase signatures, verified account, quota and payload are enforced', as
   };
   const originalFetch = globalThis.fetch;
   let upstreamCalls = 0;
+  let upstreamStatus = 200;
   globalThis.fetch = async (url, options) => {
     if (String(url).includes('www.googleapis.com/')) return Response.json({ keys:[jwk] }, { headers:{ 'Cache-Control':'public, max-age=60' } });
     assert.equal(options.headers['x-goog-api-key'], 'example-key');
     upstreamCalls++;
+    if (upstreamStatus !== 200) return Response.json({ error: 'sensitive provider body' }, { status: upstreamStatus });
     return Response.json({ candidates:[{ content:{ parts:[{ text:'Test response' }] } }] });
   };
   t.after(() => { globalThis.fetch = originalFetch; });
@@ -43,6 +45,14 @@ test('Firebase signatures, verified account, quota and payload are enforced', as
   assert.equal(result.status, 200); assert.equal((await result.json()).text, 'Test response'); assert.equal(upstreamCalls, 2);
   assert.equal((await post(validToken, body, { ...env, AI_QUOTA: { idFromName: () => 'global', get: () => ({ fetch: async () => new Response(null, { status: 429 }) }) } })).status, 429);
   assert.equal(upstreamCalls, 2);
+  for (const [status, expected] of [[400, 'HTTP 400'], [403, 'HTTP 403'], [404, 'model'], [429, 'quota'], [500, 'HTTP 500']]) {
+    upstreamStatus = status;
+    const result = await post(validToken);
+    assert.equal(result.status, 502);
+    const message = (await result.json()).error;
+    assert.ok(message.includes(expected));
+    assert.ok(!message.includes('sensitive provider body'));
+  }
 });
 
 test('durable quota enforces per-user and shared daily caps', async () => {
