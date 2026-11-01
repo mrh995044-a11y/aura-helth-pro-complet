@@ -1,17 +1,19 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { FlatList, Image, Pressable, TextInput, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { Btn, Card, Pill, Sheet, Txt } from '../components/ui';
 import { useStore } from '../lib/store';
 import { C } from '../lib/theme';
-import { buildHealthContext, countLiveToday, FREE_LIVE_LIMIT, localAnalysis, runGemini } from '../lib/ai';
-import { isPro, uid } from '../lib/health';
+import { buildHealthContext, localAnalysis, runGemini } from '../lib/ai';
+import { uid } from '../lib/health';
 import type { PhotoKind } from '../lib/types';
 
 export function CoachScreen() {
   const store = useStore();
-  const { t, vault, settings, updateSettings, addChat, clearChat, getApiKey } = store;
+  const { t, vault, settings, updateSettings, addChat, clearChat } = store;
+  const settingsRef = useRef(settings);
+  useEffect(() => { settingsRef.current = settings; }, [settings]);
   const [text, setText] = useState('');
   const [symptoms, setSymptoms] = useState('');
   const [busy, setBusy] = useState(false);
@@ -19,13 +21,9 @@ export function CoachScreen() {
   const [pending, setPending] = useState<null | (() => void)>(null);
   const [photo, setPhoto] = useState<{ uri: string; base64: string; mime: string; kind: PhotoKind } | null>(null);
   const [err, setErr] = useState('');
-  const liveLeft = Math.max(0, FREE_LIVE_LIMIT - countLiveToday(vault.chat));
-  const pro = isPro(settings);
-
-  const needsLive = settings.aiMode !== 'local';
 
   const askConsent = (fn: () => void) => {
-    if (settings.aiConsent || settings.aiMode === 'local') {
+    if (settings.aiConsent) {
       fn();
       return;
     }
@@ -36,50 +34,26 @@ export function CoachScreen() {
   const reply = async (question: string, photoKind?: PhotoKind, image?: { base64: string; mime: string }) => {
     setBusy(true);
     setErr('');
+    const currentSettings = settingsRef.current;
     const prompt = buildHealthContext({
       vitals: vault.vitals,
       meds: vault.meds,
       profile: vault.profile,
-      settings,
+      settings: currentSettings,
       symptoms,
       question,
       photoKind,
     });
-    const local = () => {
-      const note = localAnalysis({ vitals: vault.vitals, meds: vault.meds, profile: vault.profile, settings, symptoms, question, photoKind });
-      addChat({ id: uid(), role: 'assistant', text: note.text, at: Date.now(), source: 'local', photoKind });
-    };
     try {
-      if (settings.aiMode === 'local') {
-        local();
-        return;
-      }
-      if (!pro && liveLeft <= 0) {
-        setErr(t('pro_required'));
-        local();
-        return;
-      }
-      const key = settings.aiMode === 'direct' ? await getApiKey() : undefined;
-      if (settings.aiMode === 'proxy' && !settings.proxyUrl.trim()) {
-        setErr(t('enter_proxy_or_key'));
-        local();
-        return;
-      }
-      if (settings.aiMode === 'direct' && !key) {
-        setErr(t('enter_proxy_or_key'));
-        local();
-        return;
-      }
       const res = await runGemini({
-        settings,
-        apiKey: key,
+        settings: currentSettings,
         prompt,
         imageBase64: image?.base64,
         mimeType: image?.mime,
       });
       if (res.error || !res.text) {
         setErr(res.error || t('error_ai'));
-        const note = localAnalysis({ vitals: vault.vitals, meds: vault.meds, profile: vault.profile, settings, symptoms, question, photoKind });
+        const note = localAnalysis({ vitals: vault.vitals, meds: vault.meds, profile: vault.profile, settings: currentSettings, symptoms, question, photoKind });
         addChat({
           id: uid(),
           role: 'assistant',
@@ -145,8 +119,6 @@ export function CoachScreen() {
               </Txt>
             </Card>
             <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-              <Pill label={needsLive ? (settings.aiMode === 'proxy' ? t('mode_proxy') : t('mode_direct')) : t('on_device')} color={needsLive ? C.mint : C.violet} />
-              <Pill label={pro ? t('unlimited') : `${liveLeft} ${t('messages_left')}`} color={C.cyan} />
               <Pill label={settings.aiConsent ? t('consent_on') : t('consent_off')} color={settings.aiConsent ? C.good : C.gold} />
             </View>
             <ScrollChips
@@ -229,17 +201,6 @@ export function CoachScreen() {
             label={t('allow_share')}
             onPress={() => {
               updateSettings({ aiConsent: true });
-              setConsentOpen(false);
-              const fn = pending;
-              setPending(null);
-              fn?.();
-            }}
-          />
-          <Btn
-            label={t('use_local')}
-            kind="ghost"
-            onPress={() => {
-              updateSettings({ aiMode: 'local' });
               setConsentOpen(false);
               const fn = pending;
               setPending(null);

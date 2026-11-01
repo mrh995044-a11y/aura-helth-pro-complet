@@ -7,13 +7,12 @@ import { Btn, Card, Field, Pill, PulseHeart, Sheet, Txt } from '../components/ui
 import { useStore } from '../lib/store';
 import { C } from '../lib/theme';
 import { isPro, luhn, PLANS, uid } from '../lib/health';
-import { runGemini } from '../lib/ai';
-import type { AiMode, Lang } from '../lib/types';
+import type { Lang } from '../lib/types';
 
 export function ProfileScreen() {
   const store = useStore();
-  const { t, session, vault, settings, updateSettings, setLang, updateProfile, signOut, setPin, clearPin, setApiKey, getApiKey, activatePlan, cancelPlan, resetSamples, exportJson } = store;
-  const [sheet, setSheet] = useState<null | 'health' | 'lock' | 'ai' | 'plan' | 'privacy' | 'setup' | 'export' | 'pay'>(null);
+  const { t, session, vault, settings, updateSettings, setLang, updateProfile, signOut, setPin, clearPin, activatePlan, cancelPlan, resetSamples, exportJson } = store;
+  const [sheet, setSheet] = useState<null | 'health' | 'lock' | 'plan' | 'privacy' | 'setup' | 'export' | 'pay'>(null);
   const [planPick, setPlanPick] = useState<'monthly' | 'yearly'>('yearly');
   const [toast, setToast] = useState('');
   const pro = isPro(settings);
@@ -52,7 +51,6 @@ export function ProfileScreen() {
         } />
         <Row icon="person-outline" label={t('health_profile')} sub={vault.profile.bloodGroup || t('add_health')} onPress={() => setSheet('health')} />
         <Row icon="lock-closed-outline" label={t('security')} sub={settings.lockEnabled ? t('on') : t('off')} onPress={() => setSheet('lock')} />
-        <Row icon="sparkles-outline" label={t('ai_connection')} sub={settings.aiMode === 'proxy' ? t('mode_proxy') : settings.aiMode === 'direct' ? t('mode_direct') : t('mode_local')} onPress={() => setSheet('ai')} />
         <Row icon="shield-checkmark-outline" label={t('privacy')} sub={t('data_local')} onPress={() => setSheet('privacy')} />
         <Row icon="document-text-outline" label={t('setup')} sub={t('guide_p')} onPress={() => setSheet('setup')} />
         <Row icon="download-outline" label={t('export_data')} sub={t('json_ready')} onPress={() => setSheet('export')} />
@@ -71,7 +69,6 @@ export function ProfileScreen() {
 
       <HealthSheet open={sheet === 'health'} onClose={() => setSheet(null)} />
       <LockSheet open={sheet === 'lock'} onClose={() => setSheet(null)} onSaved={(m) => ping(m)} />
-      <AiSheet open={sheet === 'ai'} onClose={() => setSheet(null)} onSaved={(m) => ping(m)} />
       <PlanSheet
         open={sheet === 'plan'}
         onClose={() => setSheet(null)}
@@ -89,13 +86,10 @@ export function ProfileScreen() {
         <Btn label={settings.aiConsent ? t('revoke') : t('allow')} kind="soft" onPress={() => updateSettings({ aiConsent: !settings.aiConsent })} />
       </InfoSheet>
       <InfoSheet open={sheet === 'setup'} onClose={() => setSheet(null)} title={t('setup')}>
-        <Txt weight="700">{t('how_gemini')}</Txt>
-        <Txt size={13} color={C.muted}>{t('steps_gemini')}</Txt>
         <Txt weight="700">{t('how_db')}</Txt>
         <Txt size={13} color={C.muted}>{t('steps_db')}</Txt>
         <Txt weight="700">{t('how_android')}</Txt>
         <Txt size={13} color={C.muted}>{t('steps_android')}</Txt>
-        <Txt size={12} color={C.gold}>{t('env_hint')}</Txt>
       </InfoSheet>
       <InfoSheet open={sheet === 'export'} onClose={() => setSheet(null)} title={t('export_data')}>
         <Txt size={13} color={C.muted}>{t('exported_body')}</Txt>
@@ -202,61 +196,6 @@ function LockSheet({ open, onClose, onSaved }: { open: boolean; onClose: () => v
         </Pressable>
         {hasPin ? <Btn label={t('disable')} kind="danger" onPress={async () => { await clearPin(); onSaved(t('off')); onClose(); }} /> : null}
       </View>
-    </Sheet>
-  );
-}
-
-function AiSheet({ open, onClose, onSaved }: { open: boolean; onClose: () => void; onSaved: (m: string) => void }) {
-  const { t, settings, updateSettings, setApiKey, getApiKey } = useStore();
-  const [mode, setMode] = useState<AiMode>(settings.aiMode);
-  const [url, setUrl] = useState(settings.proxyUrl);
-  const [model, setModel] = useState(settings.model);
-  const [key, setKey] = useState('');
-  const [status, setStatus] = useState('');
-  React.useEffect(() => {
-    if (!open) return;
-    setMode(settings.aiMode);
-    setUrl(settings.proxyUrl);
-    setModel(settings.model);
-    getApiKey().then((k) => setKey(k ? '••••••••' : ''));
-  }, [open]);
-  return (
-    <Sheet visible={open} onClose={onClose} title={t('ai_connection')}>
-      <ScrollView contentContainerStyle={{ gap: 10 }} keyboardShouldPersistTaps="handled" style={{ maxHeight: 520 }}>
-        <Txt size={12} color={C.muted}>{t('ai_sub')}</Txt>
-        {(['proxy', 'direct', 'local'] as AiMode[]).map((m) => (
-          <Pressable key={m} onPress={() => setMode(m)} style={{ padding: 10, borderRadius: 12, borderWidth: 1, borderColor: mode === m ? C.violet : C.line, backgroundColor: C.card }}>
-            <Txt weight="700">{m === 'proxy' ? t('mode_proxy') : m === 'direct' ? t('mode_direct') : t('mode_local')}</Txt>
-            <Txt size={12} color={C.muted}>{m === 'proxy' ? t('proxy_help') : m === 'direct' ? t('direct_help') : t('local_help')}</Txt>
-          </Pressable>
-        ))}
-        {mode === 'proxy' ? <Field label={t('proxy_url')} value={url} onChangeText={setUrl} placeholder={t('proxy_ph')} autoCapitalize="none" /> : null}
-        {mode === 'direct' ? <Field label={t('api_key')} value={key} onChangeText={setKey} placeholder={t('key_ph')} secure /> : null}
-        <Field label={t('model')} value={model} onChangeText={setModel} placeholder={t('model_ph')} />
-        <Txt size={12} color={C.gold}>{t('key_warning')}</Txt>
-        <Txt size={12} color={C.muted}>{t('flash_default')}</Txt>
-        {status ? <Txt size={12} color={C.mint}>{status}</Txt> : null}
-        <Btn
-          label={t('save_settings')}
-          onPress={async () => {
-            updateSettings({ aiMode: mode, proxyUrl: url.trim(), model: model.trim() || 'gemini-2.5-flash' });
-            if (mode === 'direct' && key && !key.includes('•')) await setApiKey(key.trim());
-            if (mode !== 'direct') await setApiKey('');
-            onSaved(t('settings_saved'));
-          }}
-        />
-        <Btn
-          label={t('test_connection')}
-          kind="soft"
-          onPress={async () => {
-            const next = { ...settings, aiMode: mode, proxyUrl: url.trim(), model: model.trim() || 'gemini-2.5-flash' };
-            const apiKey = mode === 'direct' ? (key.includes('•') ? await getApiKey() : key.trim()) : undefined;
-            const res = await runGemini({ settings: next, apiKey, prompt: 'Reply with exactly: Aura proxy ok. Then one sentence that this is not a diagnosis.' });
-            setStatus(res.error ? `${t('connection_fail')} ${res.error}` : t('connection_ok'));
-          }}
-        />
-        <Btn label={settings.aiConsent ? t('revoke') : t('allow')} kind="ghost" onPress={() => updateSettings({ aiConsent: !settings.aiConsent })} />
-      </ScrollView>
     </Sheet>
   );
 }

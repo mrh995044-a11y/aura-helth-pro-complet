@@ -1,5 +1,5 @@
 import { getAuth, getIdToken } from '@react-native-firebase/auth';
-import type { AiMode, ChatMessage, Med, PhotoKind, Profile, Settings, Vital } from './types';
+import type { Med, PhotoKind, Profile, Settings, Vital } from './types';
 import { classify, formatValue, formatWhen, metricUnit } from './health';
 
 export interface AiResult {
@@ -140,7 +140,7 @@ export function localAnalysis(opts: {
     if (low.length) bits.push(`Stock looks low for ${low.map((m) => m.name).join(', ')}. A refill reminder only — confirm with your pharmacy.`);
   }
   if (opts.symptoms) bits.push(`You noted: ${opts.symptoms}. A journal can hold that; it cannot explain the cause.`);
-  if (opts.question) bits.push(`On your question — “${opts.question}” — the on-device engine can only reflect the logs above. Connect Gemini in Profile for a fuller reply.`);
+  if (opts.question) bits.push(`On your question — “${opts.question}” — the on-device engine can only reflect the logs above. Try AuraCoach again later for a fuller reply.`);
   if (opts.photoKind === 'meal') bits.push('Meal photo: this engine cannot see the image. General tip — a vegetable, a protein and a glass of water is a calm plate pattern, not a medical diet.');
   if (opts.photoKind === 'pack') bits.push('Medicine pack photo: this engine cannot read the pack. Check the name, strength and expiry yourself. Do not change a dose from an app.');
   if (opts.photoKind === 'document') bits.push('Document photo: keep the original for your clinician. This engine does not extract a diagnosis from images.');
@@ -160,7 +160,6 @@ async function readError(res: Response) {
 
 export async function runGemini(opts: {
   settings: Settings;
-  apiKey?: string;
   prompt: string;
   imageBase64?: string;
   mimeType?: string;
@@ -176,47 +175,22 @@ export async function runGemini(opts: {
     generationConfig: { temperature: 0.4, maxOutputTokens: 900 },
   };
   try {
-    if (opts.settings.aiMode === 'proxy') {
-      const url = opts.settings.proxyUrl.trim();
-      if (!url) return { text: '', source: 'gemini', error: 'No proxy URL' };
-      const trustedUrl = process.env.EXPO_PUBLIC_AURA_AI_URL;
-      if (!trustedUrl || url !== trustedUrl || !trustedUrl.startsWith('https://')) return { text: '', source: 'gemini', error: 'The AI server is not configured for this build.' };
-      const user = getAuth().currentUser;
-      if (!user || !user.emailVerified) return { text: '', source: 'gemini', error: 'Sign in with a verified account to use AI.' };
-      const token = await getIdToken(user);
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ model, contents: body.contents, systemInstruction: body.systemInstruction, generationConfig: body.generationConfig }),
-      });
-      if (!res.ok) return { text: '', source: 'gemini', error: String(await readError(res)) };
-      const data = await res.json();
-      const text = data.text || data.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text || '').join('') || '';
-      if (!text) return { text: '', source: 'gemini', error: 'Empty reply' };
-      return { text, source: 'gemini', model };
-    }
-    const key = opts.apiKey || '';
-    if (!key) return { text: '', source: 'gemini', error: 'No API key' };
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(key)}`;
+    const url = process.env.EXPO_PUBLIC_AURA_AI_URL;
+    if (!url || !url.startsWith('https://')) return { text: '', source: 'gemini', error: 'The AI server is not configured for this build.' };
+    const user = getAuth().currentUser;
+    if (!user || !user.emailVerified) return { text: '', source: 'gemini', error: 'Sign in with a verified account to use AI.' };
+    const token = await getIdToken(user);
     const res = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ model, contents: body.contents, systemInstruction: body.systemInstruction, generationConfig: body.generationConfig }),
     });
     if (!res.ok) return { text: '', source: 'gemini', error: String(await readError(res)) };
     const data = await res.json();
-    const text = data.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text || '').join('') || '';
-    if (!text) return { text: '', source: 'gemini', error: data.promptFeedback?.blockReason || 'Empty reply' };
+    const text = data.text || data.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text || '').join('') || '';
+    if (!text) return { text: '', source: 'gemini', error: 'Empty reply' };
     return { text, source: 'gemini', model };
   } catch (e) {
     return { text: '', source: 'gemini', error: e instanceof Error ? e.message : 'Network error' };
   }
 }
-
-export function countLiveToday(chat: ChatMessage[]) {
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  return chat.filter((m) => m.role === 'assistant' && m.source === 'gemini' && m.at >= start.getTime()).length;
-}
-
-export const FREE_LIVE_LIMIT = 4;
