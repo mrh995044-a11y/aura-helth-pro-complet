@@ -19,12 +19,14 @@ test('Firebase signatures, verified account, quota and payload are enforced', as
   const originalFetch = globalThis.fetch;
   let upstreamCalls = 0;
   let upstreamStatus = 200;
+  let upstreamException = null;
   globalThis.fetch = async (url, options) => {
     if (String(url).includes('www.googleapis.com/')) return Response.json({ keys:[jwk] }, { headers:{ 'Cache-Control':'public, max-age=60' } });
     assert.equal(options.headers['x-goog-api-key'], 'example-key');
     assert.match(String(url), /gemini-3\.8-flash:generateContent$/);
     assert.equal(JSON.parse(options.body).generationConfig.thinkingConfig.thinkingLevel, 'low');
     upstreamCalls++;
+    if (upstreamException) throw upstreamException;
     if (upstreamStatus !== 200) return Response.json({ error: 'sensitive provider body' }, { status: upstreamStatus });
     return Response.json({ candidates:[{ content:{ parts:[{ text:'Test response' }] } }] });
   };
@@ -54,6 +56,15 @@ test('Firebase signatures, verified account, quota and payload are enforced', as
     const message = (await result.json()).error;
     assert.ok(message.includes(expected));
     assert.ok(!message.includes('sensitive provider body'));
+  }
+  upstreamStatus = 200;
+  for (const [name, expected] of [['TimeoutError', 'too long'], ['SyntaxError', 'unreadable'], ['TypeError', 'network']]) {
+    upstreamException = Object.assign(new Error('sensitive details'), { name });
+    const result = await post(validToken);
+    assert.equal(result.status, 502);
+    const message = (await result.json()).error;
+    assert.ok(message.includes(expected));
+    assert.ok(!message.includes('sensitive details'));
   }
 });
 

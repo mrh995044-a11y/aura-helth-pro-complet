@@ -100,7 +100,7 @@ export default {
       const upstream = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
         method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY },
         body: JSON.stringify({ contents: body.contents, systemInstruction: { parts: [{ text: SYSTEM }] }, generationConfig: { temperature: 0.4, maxOutputTokens: 2048, thinkingConfig: { thinkingLevel: 'low' } } }),
-        signal: AbortSignal.timeout(30000),
+        signal: AbortSignal.timeout(60000),
       });
       if (!upstream.ok) {
         // Return only the HTTP status category. Never disclose provider bodies,
@@ -114,7 +114,11 @@ export default {
       const text = (data.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join('');
       if (!text) return response(502, { error: 'No AI response was available.' });
       return response(200, { text, model: MODEL });
-    } catch { return response(502, { error: 'Could not reach Gemini. Please try again later.' }); }
+    } catch (error) {
+      if (error?.name === 'TimeoutError' || error?.name === 'AbortError') return response(502, { error: 'Gemini took too long to respond. Please try again.' });
+      if (error?.name === 'SyntaxError') return response(502, { error: 'Gemini returned an unreadable response. Please try again.' });
+      return response(502, { error: 'Could not reach Gemini due to a network or provider error. Please try again.' });
+    }
   },
 };
 
