@@ -2,8 +2,10 @@ import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import type { Med } from './types';
 
-const CHANNEL = 'medication-reminders';
+const CHANNEL = 'medication-alarm-v2';
+const SOUND = 'medication_alarm.wav';
 const PREFIX = 'aura-medication:';
+const VERSIONED_PREFIX = `${PREFIX}v2:`;
 let pending: Promise<void> = Promise.resolve();
 
 if (Platform.OS !== 'web') {
@@ -17,8 +19,19 @@ async function channel() {
     await Notifications.setNotificationChannelAsync(CHANNEL, {
       name: 'Medication reminders',
       importance: Notifications.AndroidImportance.HIGH,
-      sound: 'default',
+      sound: SOUND,
+      audioAttributes: { usage: Notifications.AndroidAudioUsage.ALARM, contentType: Notifications.AndroidAudioContentType.SONIFICATION },
+      enableVibrate: true,
+      vibrationPattern: [0, 300, 200, 300],
     });
+  }
+}
+
+async function ensureAudibleChannel() {
+  if (Platform.OS !== 'android') return;
+  const current = await Notifications.getNotificationChannelAsync(CHANNEL);
+  if (current && (current.importance === Notifications.AndroidImportance.NONE || current.sound === null)) {
+    throw new Error('The medication alarm channel is muted or blocked. Open device app settings and enable sound for Medication reminders.');
   }
 }
 
@@ -35,7 +48,7 @@ export function syncMedicationReminders(meds: Med[]): Promise<void> {
     if (granted) for (const med of snapshot) for (const time of med.times) {
       if (!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time)) continue;
       const [hour, minute] = time.split(':').map(Number);
-      desired.set(`${PREFIX}${med.id}:${time}`, { hour, minute });
+      desired.set(`${VERSIONED_PREFIX}${med.id}:${time}`, { hour, minute });
     }
     for (const item of existing) if (!desired.has(item.identifier)) {
       await Notifications.cancelScheduledNotificationAsync(item.identifier);
@@ -44,7 +57,7 @@ export function syncMedicationReminders(meds: Med[]): Promise<void> {
     for (const [identifier, time] of desired) if (!existingIds.has(identifier)) {
       await Notifications.scheduleNotificationAsync({
         identifier,
-        content: { title: 'Medication reminder', body: 'It is time to check your medication schedule in AuraHealth Pro.', sound: 'default' },
+        content: { title: 'Medication reminder', body: 'It is time to check your medication schedule in AuraHealth Pro.', sound: SOUND },
         trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, channelId: CHANNEL, ...time },
       });
     }
@@ -59,4 +72,20 @@ export async function enableMedicationReminders(meds: Med[]): Promise<void> {
   const permission = await Notifications.requestPermissionsAsync();
   if (!permission.granted) throw new Error('Notifications are blocked. Allow them in your device settings and try again.');
   await syncMedicationReminders(meds);
+  await ensureAudibleChannel();
+}
+
+// An audible one-off test; this is not evidence that future daily alarms will
+// survive every device's battery, alarm, or notification settings.
+export async function testMedicationAlarm(): Promise<void> {
+  if (Platform.OS === 'web') throw new Error('Medication alarms are available in the installed mobile app.');
+  await channel();
+  const permission = await Notifications.requestPermissionsAsync();
+  if (!permission.granted) throw new Error('Notifications are blocked. Allow them in device settings.');
+  await ensureAudibleChannel();
+  await Notifications.scheduleNotificationAsync({
+    identifier: 'aura-medication-test',
+    content: { title: 'Medication alarm test', body: 'This is a test of your AuraHealth Pro medication alarm.', sound: SOUND },
+    trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 10, channelId: CHANNEL },
+  });
 }

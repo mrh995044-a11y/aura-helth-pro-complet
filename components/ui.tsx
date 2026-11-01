@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -17,8 +17,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { C, shadow } from '../lib/theme';
 
 export function PulseHeart({ size = 28 }: { size?: number }) {
-  const scale = useRef(new Animated.Value(1)).current;
-  const glow = useRef(new Animated.Value(0.35)).current;
+  const [scale] = useState(() => new Animated.Value(1));
+  const [glow] = useState(() => new Animated.Value(0.35));
   useEffect(() => {
     const loop = Animated.loop(
       Animated.sequence([

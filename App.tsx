@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, AppState, View } from 'react-native';
 import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
@@ -71,7 +71,13 @@ function Gate() {
   const { ready, session, locked, vault } = useStore();
   const meds = session ? vault.meds : null;
   useEffect(() => {
-    if (ready) syncMedicationReminders(meds || []).catch((error) => console.warn('Medication reminders:', error));
+    if (ready && session) syncMedicationReminders(meds || []).catch((error) => console.warn('Medication reminders:', error));
+  }, [ready, session?.email, meds]);
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active' && ready && session) syncMedicationReminders(meds || []).catch((error) => console.warn('Medication reminders:', error));
+    });
+    return () => subscription.remove();
   }, [ready, session?.email, meds]);
   const [auth, setAuth] = useState<'welcome' | 'in' | 'up' | 'google'>('welcome');
 

@@ -1,3 +1,4 @@
+import { syncMedicationReminders } from './reminders';
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
@@ -238,6 +239,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     },
     signOut: () => {
       signOutFirebase().then(() => {
+        syncMedicationReminders([]).catch((error) => console.warn('Could not cancel medication reminders:', error));
         setLocked(false);
         setDb((d) => ({ ...d, session: null }));
       }).catch(() => Alert.alert('Sign out failed', 'Please try again.'));

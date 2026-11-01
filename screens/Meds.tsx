@@ -1,12 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { Alert, FlatList, Pressable, ScrollView, View } from 'react-native';
+import { Alert, FlatList, Linking, Platform, Pressable, ScrollView, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Btn, Card, Field, Pill, Sheet, Txt } from '../components/ui';
 import { useStore } from '../lib/store';
 import { C, medColors } from '../lib/theme';
 import { sameDay, startOfDay, uid } from '../lib/health';
 import type { Med } from '../lib/types';
-import { enableMedicationReminders } from '../lib/reminders';
+import { enableMedicationReminders, testMedicationAlarm } from '../lib/reminders';
 
 const FORMS = ['Tablet', 'Capsule', 'Liquid', 'Injection', 'Other'];
 
@@ -96,6 +96,15 @@ export function MedsScreen() {
                 Alert.alert(t('reminders_title'), error instanceof Error ? error.message : t('reminders_error'));
               } finally { setReminderBusy(false); }
             }} />
+            <Btn label={t('test_med_alarm')} icon="alarm-outline" kind="soft" onPress={async () => {
+              try {
+                await testMedicationAlarm();
+                Alert.alert(t('reminders_title'), t('test_med_alarm_scheduled'));
+              } catch (error) {
+                Alert.alert(t('reminders_title'), error instanceof Error ? error.message : t('reminders_error'));
+              }
+            }} />
+            {Platform.OS !== 'web' ? <Btn label={t('open_notification_settings')} kind="ghost" onPress={() => Linking.openSettings().catch(() => Alert.alert(t('reminders_title'), t('reminders_error')))} /> : null}
             <Txt size={12} color={C.faint}>{t('reminders_note')}</Txt>
             <Txt weight="800">{t('today_schedule')}</Txt>
             {rows.length === 0 ? <Txt color={C.muted}>{t('nothing_due')}</Txt> : null}
