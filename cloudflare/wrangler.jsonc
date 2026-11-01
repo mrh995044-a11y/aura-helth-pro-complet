@@ -1,6 +1,7 @@
 {
   "name": "mrh995044workersdev",
   "main": "public-worker.mjs",
+  "keep_vars": true,
   "compatibility_date": "2026-10-01",
   "durable_objects": {
     "bindings": [{ "name": "AI_QUOTA", "class_name": "AiQuota" }]
