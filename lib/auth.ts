@@ -1,4 +1,5 @@
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithCredential, signOut, reload, sendEmailVerification, updateProfile, GoogleAuthProvider } from '@react-native-firebase/auth';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithCredential, signOut, reload, sendEmailVerification, updateProfile, GoogleAuthProvider, onAuthStateChanged } from '@react-native-firebase/auth';
+import type { FirebaseAuthTypes } from '@react-native-firebase/auth';
 import { GoogleSignin, isSuccessResponse } from '@react-native-google-signin/google-signin';
 
 GoogleSignin.configure({ webClientId: '147172603019-e7gs3dblefj5kq5ccbg9hij4bl88tf8p.apps.googleusercontent.com' });
@@ -35,3 +36,15 @@ export async function googleLogin() {
   return signedIn.user;
 }
 export async function signOutFirebase() { await signOut(getAuth()); }
+
+// Wait for the native SDK to finish loading its persisted authentication state.
+export async function restoredFirebaseUser() {
+  let unsubscribe = () => {};
+  try {
+    return await new Promise<FirebaseAuthTypes.User | null>((resolve) => {
+      unsubscribe = onAuthStateChanged(getAuth(), resolve);
+    });
+  } finally {
+    unsubscribe();
+  }
+}

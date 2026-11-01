@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
+import { Alert } from 'react-native';
 import type { Appointment, DoseLog, Lang, Med, PlanId, Profile, Settings, UserRec, Vault, Vital } from './types';
 import {
   defaultSettings,
@@ -16,7 +17,8 @@ import {
   validPassword,
 } from './health';
 import { makeT, type TKey } from './i18n';
-import { createAccount, emailLogin, googleLogin, signOutFirebase } from './auth';
+import { createAccount, emailLogin, googleLogin, signOutFirebase, restoredFirebaseUser } from './auth';
+import { restorableAccount } from './sessionRestore';
 
 const DB_KEY = 'aura.db.v2';
 
@@ -127,32 +129,35 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const hydrated = React.useRef(false);
 
   useEffect(() => {
+    let active = true;
     (async () => {
+      let restored = emptyDB();
+      let pin = '';
+      let shouldLock = false;
       try {
         const raw = await AsyncStorage.getItem(DB_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw) as DB;
-          setDb({
-            users: parsed.users || [],
-            session: null,
-            vaults: parsed.vaults || {},
-            settings: parsed.settings || {},
-          });
-          if (parsed.session) {
-            const s = parsed.settings?.[parsed.session];
-            if (s?.lockEnabled) setLocked(true);
-          }
-        }
-        await signOutFirebase();
-        const pin = await secGet('aura.pin');
-        setHasPin(!!pin);
+        const parsed = raw ? (JSON.parse(raw) as DB) : emptyDB();
+        const firebaseUser = await restoredFirebaseUser();
+        const user = restorableAccount(parsed.session, parsed.users || [], firebaseUser);
+        restored = {
+          users: parsed.users || [],
+          session: user?.email || null,
+          vaults: parsed.vaults || {},
+          settings: parsed.settings || {},
+        };
+        pin = (await secGet('aura.pin')) || '';
+        shouldLock = !!user && !!restored.settings[user.email]?.lockEnabled && !!pin;
       } catch {
-        /* keep empty */
-      } finally {
-        hydrated.current = true;
-        setReady(true);
+        // Do not restore an unverified or unknown session if initialization fails.
       }
+      if (!active) return;
+      hydrated.current = true;
+      setDb(restored);
+      setHasPin(!!pin);
+      setLocked(shouldLock);
+      setReady(true);
     })();
+    return () => { active = false; };
   }, []);
 
   useEffect(() => {
@@ -187,7 +192,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     });
     secGet('aura.pin').then((pin) => {
       setHasPin(!!pin);
-      setLocked(false);
+      setLocked(!!pin && !!db.settings[user.email]?.lockEnabled);
     });
   };
 
@@ -232,9 +237,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       openSession(user, !existing);
     },
     signOut: () => {
-      signOutFirebase().catch(() => {});
-      setLocked(false);
-      setDb((d) => ({ ...d, session: null }));
+      signOutFirebase().then(() => {
+        setLocked(false);
+        setDb((d) => ({ ...d, session: null }));
+      }).catch(() => Alert.alert('Sign out failed', 'Please try again.'));
     },
     setLang: (lang) => patchSettings((s) => ({ ...s, lang })),
     updateSettings: (patch) => patchSettings((s) => ({ ...s, ...patch })),

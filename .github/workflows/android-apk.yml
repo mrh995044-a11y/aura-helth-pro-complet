@@ -65,7 +65,9 @@ jobs:
         run: npx tsc --noEmit
 
       - name: Test doctor visit brief
-        run: node tests/visitBrief.test.cjs
+        run: |
+          node tests/visitBrief.test.cjs
+          node tests/sessionRestore.test.cjs
 
       - name: Generate Android project and install SDK components
         run: |

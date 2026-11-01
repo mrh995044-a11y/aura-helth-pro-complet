@@ -1,0 +1,15 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const ts = require('typescript');
+require.extensions['.ts'] = (module, filename) => module._compile(ts.transpileModule(fs.readFileSync(filename, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, filename);
+const { restorableAccount } = require('../lib/sessionRestore.ts');
+const user = { email: 'person@example.com', provider: 'email', name: 'Person', createdAt: 1 };
+const verified = { email: 'Person@example.com', emailVerified: true };
+assert.equal(restorableAccount(user.email, [user], verified), user);
+assert.equal(restorableAccount(null, [user], verified), null);
+assert.equal(restorableAccount(user.email, [user], null), null);
+assert.equal(restorableAccount(user.email, [user], { ...verified, emailVerified: false }), null);
+assert.equal(restorableAccount(user.email, [user], { ...verified, email: 'other@example.com' }), null);
+assert.equal(restorableAccount(user.email, [], verified), null);
+assert.equal(restorableAccount(user.email, [{ ...user, provider: 'sample' }], verified), null);
+console.log('Verified matching sessions restore; unverified, unknown and sample sessions do not');
