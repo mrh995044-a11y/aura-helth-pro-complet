@@ -69,7 +69,7 @@ jobs:
         run: |
           node tests/visitBrief.test.cjs
           node tests/sessionRestore.test.cjs
-          node --test cloudflare/test/worker.test.mjs
+          node --test cloudflare/test/*.test.mjs
 
       - name: Generate Android project and install SDK components
         run: |
