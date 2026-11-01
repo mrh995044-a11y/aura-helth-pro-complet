@@ -3,6 +3,7 @@ import { FlatList, Linking, Pressable, ScrollView, View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from '@expo/vector-icons';
 import { Btn, Card, Field, Pill, Sheet, Txt } from '../components/ui';
+import { VisitBrief } from '../components/VisitBrief';
 import { CENTERS, DIRECTORY_AS_OF } from '../lib/centers';
 import { useStore } from '../lib/store';
 import { C } from '../lib/theme';
@@ -24,6 +25,8 @@ export function VisitsScreen() {
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [svc, setSvc] = useState<'any' | 'physical' | 'tele' | 'lab'>('any');
   const [filters, setFilters] = useState(false);
+  const [briefOpen, setBriefOpen] = useState(false);
+  const [briefTime, setBriefTime] = useState(0);
   const [picked, setPicked] = useState<Center | null>(null);
   const [editing, setEditing] = useState<Appointment | null>(null);
   const [toast, setToast] = useState('');
@@ -137,6 +140,7 @@ export function VisitsScreen() {
           contentContainerStyle={{ padding: 16, paddingBottom: 110, gap: 10 }}
           ListHeaderComponent={
             <View style={{ gap: 8, marginBottom: 4 }}>
+              <Btn label={t('brief_title')} icon="document-text-outline" kind="soft" onPress={() => { setBriefTime(Date.now()); setBriefOpen(true); }} />
               <Txt size={12} color={C.gold}>{t('booking_note')}</Txt>
               <Btn label={t('add_visit')} icon="add" onPress={() => startRecord()} />
               {vault.appointments.some((a) => a.sample) ? <Txt size={12} color={C.violet}>{t('sample_banner')}</Txt> : null}
@@ -165,6 +169,7 @@ export function VisitsScreen() {
         </View>
       ) : null}
 
+      <VisitBrief open={briefOpen} generatedAt={briefTime} onClose={() => setBriefOpen(false)} />
       <Sheet visible={filters} onClose={() => setFilters(false)} title={t('filters')}>
         <ScrollView contentContainerStyle={{ gap: 10 }} style={{ maxHeight: 460 }}>
           <ChipRow label={t('kind')} value={kind} options={KINDS} onPick={setKind} />

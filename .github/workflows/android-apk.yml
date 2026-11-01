@@ -64,6 +64,9 @@ jobs:
       - name: Typecheck
         run: npx tsc --noEmit
 
+      - name: Test doctor visit brief
+        run: node tests/visitBrief.test.cjs
+
       - name: Generate Android project and install SDK components
         run: |
           npx expo prebuild --platform android --clean --no-install
