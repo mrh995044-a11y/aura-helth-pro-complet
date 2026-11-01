@@ -1,7 +1,7 @@
 // AuraHealth Pro: quota-protected Cloudflare Worker. Do not log requests,
 // tokens, health data, Gemini keys or upstream response bodies.
 const KEYS_URL = 'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com';
-const MODEL = 'gemini-2.5-flash';
+const MODEL = 'gemini-3.8-flash';
 const MAX_BYTES = 2 * 1024 * 1024;
 const SYSTEM = 'You are a cautious wellness assistant, not a doctor. Do not diagnose or prescribe. Encourage professional medical advice and urgent care for emergencies.';
 let keysCache = null;
@@ -99,7 +99,7 @@ export default {
     try {
       const upstream = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
         method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY },
-        body: JSON.stringify({ contents: body.contents, systemInstruction: { parts: [{ text: SYSTEM }] }, generationConfig: { temperature: 0.4, maxOutputTokens: 900 } }),
+        body: JSON.stringify({ contents: body.contents, systemInstruction: { parts: [{ text: SYSTEM }] }, generationConfig: { temperature: 0.4, maxOutputTokens: 2048, thinkingConfig: { thinkingLevel: 'low' } } }),
         signal: AbortSignal.timeout(30000),
       });
       if (!upstream.ok) {
