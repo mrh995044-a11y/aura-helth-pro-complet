@@ -26,6 +26,7 @@ jobs:
     env:
       CI: '1'
       EXPO_NO_DOCTOR: '1'
+      # The trusted HTTPS Worker endpoint is embedded at build time.
       EXPO_PUBLIC_AURA_AI_URL: ${{ vars.AURA_AI_URL }}
     steps:
       - name: Check out source
