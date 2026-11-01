@@ -16,6 +16,12 @@ When ready, deploy the `backend` directory with Node 20+, `npm ci` and `npm star
 
 Direct mode stores a user-supplied key on the device for development. Prefer a properly protected backend for shared use.
 
+## Cloudflare AI server (restricted testing only)
+
+`cloudflare/worker.mjs` is a separate Cloudflare Workers implementation for limited testing. It validates Firebase ID-token signatures and claims using Google public keys and rejects users not listed in `AI_ALLOWED_UIDS`. It requires `FIREBASE_PROJECT_ID`, `AI_ALLOWED_UIDS` (comma-separated Firebase UIDs), and `GEMINI_API_KEY` (a Cloudflare **Secret**). Only put the key into the Cloudflare dashboard secret store, never in the Worker source or repository. `GET /health` verifies that the Worker is reachable, not that Gemini works; the actual endpoint is `POST /api/coach`. Configure the exact endpoint URL as the GitHub Actions `AURA_AI_URL` repository variable and rebuild the APK to enable it in the app.
+
+The Worker is a test-only service: token revocation is not checked, its in-memory per-isolate limit is not a reliable global quota, and Cloudflare/Gemini free-tier quotas or CPU limits can cause errors. Use fictional test data. Before any public launch, add robust global rate limiting, abuse protection, privacy/medical safety review, and monitoring that does not record health data or credentials. Do not assume a free plan will stay available or cover Gemini costs. Run `node --test cloudflare/test/worker.test.mjs` for locally mocked signature, authorization, and request tests; this is not an end-to-end deployment test.
+
 ## Database
 
 The preview does not need Postgres. If you host accounts later:

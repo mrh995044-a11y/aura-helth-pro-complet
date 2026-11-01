@@ -1,0 +1,44 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import worker from '../worker.mjs';
+
+const encoder = new TextEncoder();
+const b64 = bytes => Buffer.from(bytes).toString('base64url');
+const bjson = data => b64(encoder.encode(JSON.stringify(data)));
+
+test('Firebase signatures, claims, allowlist and payload are enforced', async t => {
+  const pair = await crypto.subtle.generateKey({ name:'RSASSA-PKCS1-v1_5', modulusLength:2048, publicExponent:new Uint8Array([1,0,1]), hash:'SHA-256' }, true, ['sign','verify']);
+  const jwk = await crypto.subtle.exportKey('jwk', pair.publicKey); jwk.kid = 'test-key';
+  const env = { FIREBASE_PROJECT_ID:'test-project', GEMINI_API_KEY:'example-key', AI_ALLOWED_UIDS:'allowed-user' };
+  const now = Math.floor(Date.now() / 1000);
+  const claims = { aud:'test-project', iss:'https://securetoken.google.com/test-project', sub:'allowed-user', email_verified:true, iat:now-30, auth_time:now-30, exp:now+300 };
+  const sign = async (payload, header = { alg:'RS256', kid:'test-key' }) => {
+    const payloadText = `${bjson(header)}.${bjson(payload)}`;
+    return `${payloadText}.${b64(await crypto.subtle.sign('RSASSA-PKCS1-v1_5', pair.privateKey, encoder.encode(payloadText)))}`;
+  };
+  const originalFetch = globalThis.fetch;
+  let upstreamCalls = 0;
+  globalThis.fetch = async (url, options) => {
+    if (String(url).includes('www.googleapis.com/')) return Response.json({ keys:[jwk] }, { headers:{ 'Cache-Control':'public, max-age=60' } });
+    assert.equal(options.headers['x-goog-api-key'], 'example-key');
+    upstreamCalls++;
+    return Response.json({ candidates:[{ content:{ parts:[{ text:'Test response' }] } }] });
+  };
+  t.after(() => { globalThis.fetch = originalFetch; });
+  const body = JSON.stringify({ contents:[{ role:'user', parts:[{ text:'hello' }] }] });
+  const post = (token, data = body, override = env) => worker.fetch(new Request('https://test.example/api/coach', { method:'POST', headers:token ? { Authorization:`Bearer ${token}` } : {}, body:data }), override);
+  assert.equal((await worker.fetch(new Request('https://test.example/health'), {})).status, 200);
+  assert.equal((await post(null)).status, 401);
+  assert.equal((await post('bad')).status, 401);
+  assert.equal((await post(await sign({ ...claims, exp:now-1 }))).status, 401);
+  assert.equal((await post(await sign({ ...claims, aud:'other' }))).status, 401);
+  assert.equal((await post(await sign({ ...claims, sub:'other-user' }))).status, 403);
+  assert.equal((await post(await sign({ ...claims, email_verified:false }))).status, 403);
+  const validToken = await sign(claims);
+  const badSignature = `${validToken.slice(0, validToken.lastIndexOf('.')+1)}${b64(new Uint8Array(256))}`;
+  assert.equal((await post(badSignature)).status, 401);
+  assert.equal((await post(validToken, '{}')).status, 400);
+  assert.equal((await post(validToken, body, { ...env, AI_ALLOWED_UIDS:'' })).status, 503);
+  const result = await post(validToken);
+  assert.equal(result.status, 200); assert.equal((await result.json()).text, 'Test response'); assert.equal(upstreamCalls, 1);
+});
