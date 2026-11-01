@@ -8,11 +8,11 @@ Hospital phones, hours, fees, sample medicines, sample readings and sample appoi
 
 ## Gemini API server (integration in progress)
 
-The former Vercel proxy is disabled because it allowed unauthenticated public requests. `backend/server.js` is a Render-compatible Node service that verifies Firebase ID tokens for this project and requires a verified email. It keeps `GEMINI_API_KEY` on the server and limits requests per user in memory. A health check is available at `/health`.
+The former Vercel proxy is disabled because it allowed unauthenticated public requests. `backend/server.js` is a Render-compatible Node service that verifies Firebase ID tokens for this project and requires a verified email and an explicit allowlist of Firebase user IDs. It keeps `GEMINI_API_KEY` on the server and limits requests per user in memory. A health check is available at `/health`.
 
 **The mobile app has Firebase authentication and can send a verified-user ID token to the AI server configured at build time, but this integration has not been tested end to end on a phone.** Do not treat it as production-ready. The in-memory rate limit resets on restart and applies per instance; it is not sufficient protection against abuse for a public production launch. Add persistent rate limits, App Check/abuse controls, quotas and monitoring before public deployment. ID token verification does not check revocation. Review privacy, consent and deployment requirements before handling health data.
 
-When ready, deploy the `backend` directory with Node 20+, `npm ci` and `npm start`; configure `FIREBASE_PROJECT_ID` and `GEMINI_API_KEY` as environment variables in the hosting dashboard, never in source control or the APK. See `backend/package.json` for the local backend test command.
+When ready, deploy the `backend` directory with Node 20+, `npm ci` and `npm start`; configure `FIREBASE_PROJECT_ID`, `GEMINI_API_KEY` and `AI_ALLOWED_UIDS` (comma-separated Firebase user IDs) as environment variables in the hosting dashboard, never in source control or the APK. See `backend/package.json` for the local backend test command.
 
 Direct mode stores a user-supplied key on the device for development. Prefer a properly protected backend for shared use.
 
@@ -67,6 +67,6 @@ New email accounts start without sample health records; the Explore account and 
 3. Test medication notifications on a real device, including after restart and under battery-saving settings. Notifications are not a substitute for another reminder.
 4. The Doctor Visit Brief is under Visits → My visits. It excludes sample readings and medicines and is only copied when the user chooses.
 
-For a **future test-only AI deployment**, after reviewing server security, set the GitHub Actions repository variable `AURA_AI_URL` to the exact HTTPS Render URL ending in `/api/coach`, then build a new APK. Render requires environment variables `FIREBASE_PROJECT_ID` and `GEMINI_API_KEY`; put the latter only in the host's secret settings, not in chat or source control. The app sends Firebase ID tokens only to the exact configured URL. Configuring a URL does not itself deploy the server or guarantee AI works. Keep public deployment disabled until production rate limiting, abuse controls and privacy review are complete.
+For a **future test-only AI deployment**, after reviewing server security, set the GitHub Actions repository variable `AURA_AI_URL` to the exact HTTPS Render URL ending in `/api/coach`, then build a new APK. Render requires environment variables `FIREBASE_PROJECT_ID`, `GEMINI_API_KEY` and `AI_ALLOWED_UIDS` (only authorized tester user IDs); put the latter only in the host's secret settings, not in chat or source control. The app sends Firebase ID tokens only to the exact configured URL. Configuring a URL does not itself deploy the server or guarantee AI works. Keep public deployment disabled until production rate limiting, abuse controls and privacy review are complete.
 
 **Not yet production-ready:** family sharing across devices is not implemented; device records use local storage and are not a secure synced medical record; payment flows and directory listings are demonstrations; real-device authentication, notification and AI tests are outstanding; and release signing, release lint, privacy, security and medical-safety review are needed.

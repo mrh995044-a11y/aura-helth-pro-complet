@@ -43,7 +43,8 @@ function validateContents(contents) {
   return true;
 }
 
-function createServer({ verifyToken, apiKey, fetchImpl = fetch, now = Date.now }) {
+function createServer({ verifyToken, apiKey, allowedUids = [], fetchImpl = fetch, now = Date.now }) {
+  const allowed = new Set(allowedUids);
   const usage = new Map();
   return http.createServer(async (req, res) => {
     if (req.method === 'GET' && req.url === '/health') return reply(res, 200, { ok: true });
@@ -54,6 +55,7 @@ function createServer({ verifyToken, apiKey, fetchImpl = fetch, now = Date.now }
     try { user = await verifyToken(match[1]); }
     catch { return reply(res, 401, { error: 'Invalid or expired sign-in' }); }
     if (!user.uid || user.email_verified !== true) return reply(res, 403, { error: 'A verified email is required' });
+    if (!allowed.has(user.uid)) return reply(res, 403, { error: 'This account is not enabled for the AI test' });
     const time = now();
     for (const [id, window] of usage) if (time >= window.reset) usage.delete(id);
     const window = usage.get(user.uid) || { count: 0, reset: time + WINDOW_MS };
@@ -82,9 +84,10 @@ function createServer({ verifyToken, apiKey, fetchImpl = fetch, now = Date.now }
 
 if (require.main === module) {
   const projectId = process.env.FIREBASE_PROJECT_ID;
-  if (!projectId || !process.env.GEMINI_API_KEY) throw new Error('Set FIREBASE_PROJECT_ID and GEMINI_API_KEY in server environment');
+  const allowedUids = (process.env.AI_ALLOWED_UIDS || '').split(',').map(uid => uid.trim()).filter(Boolean);
+  if (!projectId || !process.env.GEMINI_API_KEY || !allowedUids.length) throw new Error('Set FIREBASE_PROJECT_ID, GEMINI_API_KEY and AI_ALLOWED_UIDS in server environment');
   if (!getApps().length) initializeApp({ projectId });
-  const server = createServer({ apiKey: process.env.GEMINI_API_KEY, verifyToken: token => getAuth().verifyIdToken(token) });
+  const server = createServer({ apiKey: process.env.GEMINI_API_KEY, allowedUids, verifyToken: token => getAuth().verifyIdToken(token) });
   server.listen(Number(process.env.PORT || 3000), '0.0.0.0', () => console.log('AI service listening'));
 }
 module.exports = { createServer, validateContents };

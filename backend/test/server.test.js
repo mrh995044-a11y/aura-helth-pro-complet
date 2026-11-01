@@ -4,7 +4,7 @@ const { createServer } = require('../server');
 
 test('requires verified Firebase identity, validates content, and limits usage', async t => {
   let calls = 0;
-  const server = createServer({ apiKey: 'test', verifyToken: async token => {
+  const server = createServer({ apiKey: 'test', allowedUids: ['user', 'invalid'], verifyToken: async token => {
     if (token === 'bad') throw new Error('bad');
     return { uid: token, email_verified: token !== 'unverified' };
   }, fetchImpl: async () => { calls++; return { ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: 'Hello' }] } }] }) }; } });
@@ -17,6 +17,7 @@ test('requires verified Firebase identity, validates content, and limits usage',
   assert.equal((await post(null)).status, 401);
   assert.equal((await post('bad')).status, 401);
   assert.equal((await post('unverified')).status, 403);
+  assert.equal((await post('other-verified-user')).status, 403);
   assert.equal((await post('invalid', '{}')).status, 400);
   const ok = await post('user'); assert.equal(ok.status, 200); assert.equal((await ok.json()).text, 'Hello');
   for (let i = 0; i < 9; i++) assert.equal((await post('user')).status, 200);
