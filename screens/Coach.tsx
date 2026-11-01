@@ -17,6 +17,12 @@ export function CoachScreen() {
   const [text, setText] = useState('');
   const [symptoms, setSymptoms] = useState('');
   const [busy, setBusy] = useState(false);
+  const [dotCount, setDotCount] = useState(1);
+  useEffect(() => {
+    if (!busy) return;
+    const timer = setInterval(() => setDotCount((count) => count % 3 + 1), 450);
+    return () => clearInterval(timer);
+  }, [busy]);
   const [consentOpen, setConsentOpen] = useState(false);
   const [pending, setPending] = useState<null | (() => void)>(null);
   const [photo, setPhoto] = useState<{ uri: string; base64: string; mime: string; kind: PhotoKind } | null>(null);
@@ -72,7 +78,7 @@ export function CoachScreen() {
 
   const send = () => {
     const q = text.trim();
-    if (!q && !photo) return;
+    if (busy || (!q && !photo)) return;
     const kind = photo?.kind;
     const image = photo ? { base64: photo.base64, mime: photo.mime } : undefined;
     addChat({ id: uid(), role: 'user', text: q || t('photo'), at: Date.now(), source: 'user', photoKind: kind });
@@ -82,6 +88,7 @@ export function CoachScreen() {
   };
 
   const analyse = () => {
+    if (busy) return;
     const q = symptoms.trim() ? `Analyse the last 14 days. Notes: ${symptoms}` : 'Analyse the last 14 days of shared logs.';
     addChat({ id: uid(), role: 'user', text: t('analyze_14'), at: Date.now(), source: 'user' });
     askConsent(() => reply(q));
@@ -124,6 +131,7 @@ export function CoachScreen() {
             <ScrollChips
               items={[t('prompt_1'), t('prompt_2'), t('prompt_3'), t('prompt_4')]}
               onPick={(q) => {
+                if (busy) return;
                 addChat({ id: uid(), role: 'user', text: q, at: Date.now(), source: 'user' });
                 askConsent(() => reply(q));
               }}
@@ -148,6 +156,12 @@ export function CoachScreen() {
         ListEmptyComponent={<Txt color={C.muted}>{t('empty_coach')}</Txt>}
       />
       <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: 12, backgroundColor: '#0C0A14EE', borderTopWidth: 1, borderColor: C.line, gap: 8 }}>
+        {busy ? (
+          <View accessibilityRole="progressbar" accessibilityLabel={t('thinking')} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 6 }}>
+            <Txt size={12} color={C.muted}>{t('thinking')}</Txt>
+            <Txt size={16} weight="800" color={C.violet}>{'.'.repeat(dotCount)}</Txt>
+          </View>
+        ) : null}
         {photo ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Image source={{ uri: photo.uri }} style={{ width: 42, height: 42, borderRadius: 8 }} />

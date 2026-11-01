@@ -189,7 +189,7 @@ export async function runGemini(opts: {
     const data = await res.json();
     const text = data.text || data.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text || '').join('') || '';
     if (!text) return { text: '', source: 'gemini', error: 'Empty reply' };
-    return { text, source: 'gemini', model };
+    return { text, source: 'gemini', model: typeof data.model === 'string' ? data.model : undefined };
   } catch (e) {
     return { text: '', source: 'gemini', error: e instanceof Error ? e.message : 'Network error' };
   }

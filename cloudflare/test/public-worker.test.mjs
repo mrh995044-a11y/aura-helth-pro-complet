@@ -23,8 +23,8 @@ test('Firebase signatures, verified account, quota and payload are enforced', as
   globalThis.fetch = async (url, options) => {
     if (String(url).includes('www.googleapis.com/')) return Response.json({ keys:[jwk] }, { headers:{ 'Cache-Control':'public, max-age=60' } });
     assert.equal(options.headers['x-goog-api-key'], 'example-key');
-    assert.match(String(url), /gemini-3\.8-flash:generateContent$/);
-    assert.equal(JSON.parse(options.body).generationConfig.thinkingConfig.thinkingLevel, 'low');
+    assert.match(String(url), /gemini-3\.5-flash-lite:generateContent$/);
+    assert.equal(JSON.parse(options.body).generationConfig.thinkingConfig.thinkingLevel, 'minimal');
     upstreamCalls++;
     if (upstreamException) throw upstreamException;
     if (upstreamStatus !== 200) return Response.json({ error: 'sensitive provider body' }, { status: upstreamStatus });
