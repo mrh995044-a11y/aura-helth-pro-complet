@@ -46,24 +46,15 @@ notes_si=[
 ]
 
 def replace_text(shape, message):
-    # Preserve font styling when changing each text box; fit Sinhala glyphs within
-    # the existing, compact cards without rewriting the slide layout.
-    p=shape.text_frame.paragraphs[0]
-    first=p.runs[0] if p.runs else None
-    original_size=first.font.size if first else None
-    original_bold=first.font.bold if first else None
-    original_rgb=None
-    if first and first.font.color.type is not None:
-        try: original_rgb=first.font.color.rgb
-        except (AttributeError, ValueError): pass
-    alignment=p.alignment
-    shape.text_frame.text=message
-    p=shape.text_frame.paragraphs[0];p.alignment=alignment
-    for run in p.runs:
-        run.font.name='Nirmala UI'
-        if original_size: run.font.size=Pt(max(8, original_size.pt * (0.90 if original_size.pt >= 14 else 0.86)))
-        if original_bold is not None: run.font.bold=original_bold
-        if original_rgb: run.font.color.rgb=original_rgb
+    # The source deck stores its colours, size and weight on the paragraph's
+    # default run properties, not on the individual run. Keep those properties
+    # when replacing the text so the Sinhala slides retain the original contrast.
+    paragraph = shape.text_frame.paragraphs[0]
+    original_size = paragraph.font.size
+    paragraph.text = message
+    paragraph.font.name = 'Nirmala UI'
+    if original_size:
+        paragraph.font.size = Pt(max(8, original_size.pt * (0.90 if original_size.pt >= 14 else 0.86)))
 
 # One gentle automatic fade on each slide's main title, plus a fade transition.
 # Timing references the actual shape id; the remaining content stays editable.
