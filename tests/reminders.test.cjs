@@ -25,7 +25,7 @@ Module._load = function(request, ...args) {
   if (request === 'expo-notifications') return notifications;
   return originalLoad.call(this, request, ...args);
 };
-const { syncMedicationReminders, enableMedicationReminders, testMedicationAlarm } = require('../lib/reminders.ts');
+const { syncMedicationReminders, enableMedicationReminders, testMedicationAlarm, syncBedtimeReminder, enableBedtimeReminder } = require('../lib/reminders.ts');
 Module._load = originalLoad;
 const med = (id, times, sample = false) => ({ id, times, sample });
 (async () => {
@@ -51,5 +51,13 @@ const med = (id, times, sample = false) => ({ id, times, sample });
   assert.equal(scheduled.get('aura-medication-test').trigger.channelId, 'medication-alarm-v2');
   await syncMedicationReminders([med('a', ['08:00'])]);
   assert.ok(scheduled.has('aura-medication-test'), 'unrelated test notification is not cancelled');
+  await enableBedtimeReminder('22:15');
+  assert.equal(scheduled.get('aura-bedtime:22:15').trigger.hour, 22);
+  await syncBedtimeReminder('21:00');
+  assert.ok(!scheduled.has('aura-bedtime:22:15'));
+  assert.ok(scheduled.has('aura-bedtime:21:00'));
+  await syncBedtimeReminder('');
+  assert.ok(!scheduled.has('aura-bedtime:21:00'));
+  await assert.rejects(enableBedtimeReminder('25:00'), /valid time/);
   console.log('Medication reminder migration, edits, deletes, permissions, queue and test alarm passed');
 })().catch(e => { console.error(e); process.exitCode = 1; });

@@ -1,4 +1,5 @@
-import { syncMedicationReminders } from './reminders';
+import { syncBedtimeReminder, syncMedicationReminders } from './reminders';
+import { withoutSampleMedicines } from './medicationCleanup';
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
@@ -10,7 +11,6 @@ import {
   isPro,
   PLANS,
   seedAppointments,
-  seedMeds,
   seedProfile,
   seedVitals,
   uid,
@@ -62,7 +62,7 @@ async function secDel(key: string) {
 function emptyVault(name: string, sample = false): Vault {
   return {
     vitals: sample ? seedVitals() : [],
-    meds: sample ? seedMeds() : [],
+    meds: [],
     doses: [],
     appointments: sample ? seedAppointments() : [],
     profile: sample ? seedProfile(name) : { name, dob: '', sex: '', bloodGroup: '', heightCm: '', weightKg: '', conditions: '', allergies: '', emergencyName: '', emergencyPhone: '', homeDistrict: '' },
@@ -140,10 +140,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         const parsed = raw ? (JSON.parse(raw) as DB) : emptyDB();
         const firebaseUser = await restoredFirebaseUser();
         const user = restorableAccount(parsed.session, parsed.users || [], firebaseUser);
+        const vaults = Object.fromEntries(Object.entries(parsed.vaults || {}).map(([key, vault]) => [key, withoutSampleMedicines(vault)]));
         restored = {
           users: parsed.users || [],
           session: user?.email || null,
-          vaults: parsed.vaults || {},
+          vaults,
           settings: parsed.settings || {},
         };
         pin = (await secGet('aura.pin')) || '';
@@ -239,6 +240,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     },
     signOut: () => {
       signOutFirebase().then(() => {
+        syncBedtimeReminder('').catch((error) => console.warn('Could not cancel bedtime reminder:', error));
         syncMedicationReminders([]).catch((error) => console.warn('Could not cancel medication reminders:', error));
         setLocked(false);
         setDb((d) => ({ ...d, session: null }));

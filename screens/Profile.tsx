@@ -11,7 +11,7 @@ import type { Lang } from '../lib/types';
 
 export function ProfileScreen() {
   const store = useStore();
-  const { t, session, vault, settings, updateSettings, setLang, updateProfile, signOut, setPin, clearPin, activatePlan, cancelPlan, resetSamples, exportJson } = store;
+  const { t, session, vault, settings, updateSettings, setLang, updateProfile, signOut, setPin, clearPin, activatePlan, cancelPlan, exportJson } = store;
   const [sheet, setSheet] = useState<null | 'health' | 'lock' | 'plan' | 'privacy' | 'setup' | 'export' | 'pay'>(null);
   const [planPick, setPlanPick] = useState<'monthly' | 'yearly'>('yearly');
   const [toast, setToast] = useState('');
@@ -94,7 +94,6 @@ export function ProfileScreen() {
       <InfoSheet open={sheet === 'export'} onClose={() => setSheet(null)} title={t('export_data')}>
         <Txt size={13} color={C.muted}>{t('exported_body')}</Txt>
         <Btn label={t('copy')} onPress={async () => { await Clipboard.setStringAsync(exportJson()); ping(t('copied')); }} />
-        <Btn label={t('reset_samples')} kind="danger" onPress={() => { resetSamples(); ping(t('reset_done')); }} />
       </InfoSheet>
     </View>
   );

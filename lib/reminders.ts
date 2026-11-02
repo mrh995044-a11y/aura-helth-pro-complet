@@ -89,3 +89,38 @@ export async function testMedicationAlarm(): Promise<void> {
     trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 10, channelId: CHANNEL },
   });
 }
+
+const BEDTIME_PREFIX = 'aura-bedtime:';
+let bedtimePending: Promise<void> = Promise.resolve();
+
+export function syncBedtimeReminder(time: string): Promise<void> {
+  const job = bedtimePending.catch(() => {}).then(async () => {
+    if (Platform.OS === 'web') return;
+    await channel();
+    const granted = (await Notifications.getPermissionsAsync()).granted;
+    const valid = /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time);
+    const identifier = granted && valid ? `${BEDTIME_PREFIX}${time}` : '';
+    const existing = (await Notifications.getAllScheduledNotificationsAsync()).filter(item => item.identifier.startsWith(BEDTIME_PREFIX));
+    for (const item of existing) if (item.identifier !== identifier) await Notifications.cancelScheduledNotificationAsync(item.identifier);
+    if (identifier && !existing.some(item => item.identifier === identifier)) {
+      const [hour, minute] = time.split(':').map(Number);
+      await Notifications.scheduleNotificationAsync({
+        identifier,
+        content: { title: 'Bedtime reminder', body: 'It is time to start your bedtime routine.', sound: SOUND },
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, channelId: CHANNEL, hour, minute },
+      });
+    }
+  });
+  bedtimePending = job;
+  return job;
+}
+
+export async function enableBedtimeReminder(time: string): Promise<void> {
+  if (!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time)) throw new Error('Enter a valid time in 24-hour format, such as 22:00.');
+  if (Platform.OS === 'web') throw new Error('Bedtime reminders are available in the installed mobile app.');
+  await channel();
+  const permission = await Notifications.requestPermissionsAsync();
+  if (!permission.granted) throw new Error('Notifications are blocked. Allow them in device settings.');
+  await ensureAudibleChannel();
+  await syncBedtimeReminder(time);
+}

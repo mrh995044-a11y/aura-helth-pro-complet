@@ -70,6 +70,8 @@ jobs:
           node tests/visitBrief.test.cjs
           node tests/sessionRestore.test.cjs
           node tests/reminders.test.cjs
+          node tests/reportScan.test.cjs
+          node tests/medicationCleanup.test.cjs
           node --test cloudflare/test/*.test.mjs
 
       - name: Generate Android project and install SDK components

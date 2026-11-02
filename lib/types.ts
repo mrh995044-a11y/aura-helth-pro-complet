@@ -128,6 +128,8 @@ export interface Settings {
   proxyUrl: string;
   model: string;
   aiConsent: boolean;
+  bedtimeReminder?: string;
+  stepTrackingEnabled?: boolean;
   shareVitals: boolean;
   shareMeds: boolean;
   shareProfile: boolean;

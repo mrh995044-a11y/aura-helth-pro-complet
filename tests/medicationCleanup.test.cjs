@@ -1,0 +1,12 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const ts = require('typescript');
+require.extensions['.ts'] = (m, filename) => m._compile(ts.transpileModule(fs.readFileSync(filename, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, filename);
+const { withoutSampleMedicines } = require('../lib/medicationCleanup.ts');
+const original = { meds: [{id:'demo',sample:true},{id:'real',sample:false},{id:'old'}], doses: [{medId:'demo'}, {medId:'real'}], vitals:[{id:'x'}] };
+const result = withoutSampleMedicines(original);
+assert.deepEqual(result.meds.map(x => x.id), ['real','old']);
+assert.deepEqual(result.doses.map(x => x.medId), ['real']);
+assert.equal(result.vitals, original.vitals);
+assert.equal(original.meds.length, 3);
+console.log('Only explicitly sample medicines and their associated dose logs are removed');

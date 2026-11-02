@@ -109,7 +109,9 @@ export function VisitsScreen() {
                 <Txt size={13} color={C.muted}>{results.length} {t('n_centers')} · {t('as_of')} {DIRECTORY_AS_OF}</Txt>
                 <Pressable onPress={() => setFilters(true)}><Txt color={C.violet} weight="700">{t('filters')}</Txt></Pressable>
               </View>
-              <Txt size={12} color={C.gold}>{t('not_live')}</Txt>
+              <Txt size={12} color={C.gold}>{t('not_live')} Phone numbers, services and opening hours can change; confirm directly before visiting.</Txt>
+              <Btn label="Search eChannelling website" icon="open-outline" kind="soft" onPress={() => Linking.openURL('https://www.echannelling.com/').catch(() => setToast('Could not open website.'))} />
+              <Txt size={12} color={C.faint}>External service. This app does not have a complete or live national directory.</Txt>
             </View>
           }
           renderItem={({ item }) => (
