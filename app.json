@@ -56,6 +56,23 @@
         {
           "motionPermission": "Allow AuraHealth Pro to count steps while the app is open."
         }
+      ],
+      "@react-native-community/datetimepicker",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow AuraHealth Pro to take photos when you choose to use AuraCoach.",
+          "recordAudioAndroid": false,
+          "barcodeScannerEnabled": false
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow AuraHealth Pro to select photos you choose to share.",
+          "cameraPermission": "Allow AuraHealth Pro to take photos you choose to share.",
+          "microphonePermission": false
+        }
       ]
     ]
   }

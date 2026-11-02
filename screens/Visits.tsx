@@ -3,6 +3,7 @@ import { FlatList, Linking, Pressable, ScrollView, View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from '@expo/vector-icons';
 import { Btn, Card, Field, Pill, Sheet, Txt } from '../components/ui';
+import { TimePicker24 } from '../components/TimePicker24';
 import { VisitBrief } from '../components/VisitBrief';
 import { CENTERS, DIRECTORY_AS_OF } from '../lib/centers';
 import { useStore } from '../lib/store';
@@ -22,7 +23,6 @@ export function VisitsScreen() {
   const [district, setDistrict] = useState('Any');
   const [city, setCity] = useState('Any');
   const [specialty, setSpecialty] = useState('Any');
-  const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [svc, setSvc] = useState<'any' | 'physical' | 'tele' | 'lab'>('any');
   const [filters, setFilters] = useState(false);
   const [briefOpen, setBriefOpen] = useState(false);
@@ -49,13 +49,12 @@ export function VisitsScreen() {
       if (district !== 'Any' && c.district !== district) return false;
       if (city !== 'Any' && c.city !== city) return false;
       if (specialty !== 'Any' && !c.specialties.includes(specialty)) return false;
-      if (verifiedOnly && c.verification !== 'verified') return false;
       if (svc !== 'any' && !c.services.includes(svc)) return false;
       if (!query) return true;
       const blob = `${c.name} ${c.city} ${c.district} ${c.address} ${c.specialties.join(' ')}`.toLowerCase();
       return blob.includes(query);
     });
-  }, [q, kind, province, district, city, specialty, verifiedOnly, svc]);
+  }, [q, kind, province, district, city, specialty, svc]);
 
   const upcoming = vault.appointments.filter((a) => a.status === 'upcoming').sort((a, b) => a.at - b.at);
   const past = vault.appointments.filter((a) => a.status !== 'upcoming').sort((a, b) => b.at - a.at);
@@ -119,10 +118,7 @@ export function VisitsScreen() {
               <Card style={{ gap: 6 }}>
                 <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
                   <Txt weight="800" style={{ flex: 1 }}>{item.name}</Txt>
-                  <Pill
-                    label={item.verification === 'verified' ? t('verified') : item.verification === 'listing' ? t('listing') : t('unverified')}
-                    color={item.verification === 'verified' ? C.good : item.verification === 'listing' ? C.gold : C.muted}
-                  />
+
                 </View>
                 <Txt size={12} color={C.muted}>{item.kind} · {item.city}, {item.district}</Txt>
                 <Txt size={12} color={C.faint} numberOfLines={1}>{item.specialties.slice(0, 3).join(' · ')}</Txt>
@@ -180,19 +176,14 @@ export function VisitsScreen() {
           <ChipRow label={t('city')} value={city} options={cities} onPick={setCity} />
           <ChipRow label={t('specialty')} value={specialty} options={specialties} onPick={setSpecialty} />
           <ChipRow label={t('services')} value={svc} options={['any', 'physical', 'tele', 'lab']} onPick={(v) => setSvc(v as typeof svc)} />
-          <Pressable onPress={() => setVerifiedOnly((v) => !v)} style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-            <Ionicons name={verifiedOnly ? 'checkbox' : 'square-outline'} size={20} color={C.mint} />
-            <Txt>{t('verified_only')}</Txt>
-          </Pressable>
           <Btn label={t('apply')} onPress={() => setFilters(false)} />
-          <Btn label={t('reset')} kind="ghost" onPress={() => { setKind('Any'); setProvince('Any'); setDistrict('Any'); setCity('Any'); setSpecialty('Any'); setVerifiedOnly(false); setSvc('any'); setQ(''); }} />
+          <Btn label={t('reset')} kind="ghost" onPress={() => { setKind('Any'); setProvince('Any'); setDistrict('Any'); setCity('Any'); setSpecialty('Any'); setSvc('any'); setQ(''); }} />
         </ScrollView>
       </Sheet>
 
       <Sheet visible={!!picked} onClose={() => setPicked(null)} title={picked?.name || ''}>
         {picked ? (
           <ScrollView contentContainerStyle={{ gap: 8 }} style={{ maxHeight: 520 }}>
-            <Pill label={picked.verification === 'verified' ? t('card_verified') : picked.verification === 'listing' ? t('card_listing') : t('card_unverified')} color={picked.verification === 'verified' ? C.good : C.gold} />
             <Txt size={13} color={C.muted}>{picked.kind} · {picked.province} / {picked.district} / {picked.city}</Txt>
             <Txt>{picked.address}</Txt>
             <Txt size={13} color={C.muted}>{t('hours')}: {picked.hours}</Txt>
@@ -214,7 +205,7 @@ export function VisitsScreen() {
             <Txt size={12} color={C.muted}>{t('specs')}: {picked.specialties.join(', ')}</Txt>
             {picked.note ? <Txt size={12} color={C.gold}>{picked.note}</Txt> : null}
             <Txt size={11} color={C.faint}>{t('source')}: {picked.source || '—'} · {t('compiled')} {picked.verifiedOn || DIRECTORY_AS_OF}</Txt>
-            <Txt size={12} color={C.faint}>{picked.verification === 'verified' ? t('verified_note') : picked.verification === 'listing' ? t('listing_note') : t('unverified_note')}</Txt>
+            <Txt size={12} color={C.gold}>Please confirm contact details and services directly with the centre.</Txt>
             <Btn label={t('book_this')} onPress={() => startRecord(picked, picked.services.includes('physical') ? 'physical' : picked.services[0])} />
           </ScrollView>
         ) : null}
@@ -290,7 +281,7 @@ function VisitEditor({
         <Field label={t('doctor')} value={local.doctor || ''} onChangeText={(doctor) => set({ doctor })} placeholder={t('doctor_ph')} autoCapitalize="words" />
         <Field label={t('specialty')} value={local.specialty || ''} onChangeText={(specialty) => set({ specialty })} autoCapitalize="words" />
         <Field label={t('date_label2')} value={date} onChangeText={setDate} placeholder="2026-11-02" />
-        <Field label={t('time_label2')} value={time} onChangeText={setTime} placeholder="09:30" />
+        <TimePicker24 label={t('time_label2')} value={time} onChange={setTime} />
         <Field label={t('fee')} value={local.fee ? String(local.fee) : ''} onChangeText={(v) => set({ fee: v ? Number(v) : undefined })} keyboardType="number-pad" placeholder={t('fee_ph')} />
         <Txt size={11} color={C.faint}>{t('fee_note')}</Txt>
         <Field label={t('ref_no')} value={local.refNo || ''} onChangeText={(refNo) => set({ refNo })} placeholder={t('ref_ph')} />

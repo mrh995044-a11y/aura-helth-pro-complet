@@ -68,6 +68,7 @@ export function buildHealthContext(opts: {
   } else lines.push('Medicine list was not shared.');
   if (opts.symptoms) lines.push(`User symptoms/notes: ${opts.symptoms}`);
   if (opts.question) lines.push(`User question: ${opts.question}`);
+  if (opts.photoKind === 'skin') lines.push('IMPORTANT: A photo cannot identify an infection, pathogen or diagnosis. Do not identify a disease, name a likely pathogen, or recommend medication. Describe only uncertain visible features and recommend a qualified clinician. Urgent symptoms require immediate medical care.');
   if (opts.photoKind) lines.push(`A photo was attached. The user labelled it as: ${opts.photoKind}. Describe only what is relevant to wellness journaling. Do not invent text on the image.`);
   return lines.join('\n');
 }
@@ -143,6 +144,7 @@ export function localAnalysis(opts: {
   if (opts.question) bits.push(`On your question — “${opts.question}” — the on-device engine can only reflect the logs above. Try AuraCoach again later for a fuller reply.`);
   if (opts.photoKind === 'meal') bits.push('Meal photo: this engine cannot see the image. General tip — a vegetable, a protein and a glass of water is a calm plate pattern, not a medical diet.');
   if (opts.photoKind === 'pack') bits.push('Medicine pack photo: this engine cannot read the pack. Check the name, strength and expiry yourself. Do not change a dose from an app.');
+  if (opts.photoKind === 'skin') bits.push('This on-device note cannot see the photo or identify an infection. A clinician can assess your concern.');
   if (opts.photoKind === 'document') bits.push('Document photo: keep the original for your clinician. This engine does not extract a diagnosis from images.');
   bits.push('Gentle next steps: keep logging at similar times, mention patterns that worry you at your next visit, and use 1990 or 119 only for emergencies.');
   bits.push('If you feel unwell, contact a clinician. This note is not a diagnosis.');

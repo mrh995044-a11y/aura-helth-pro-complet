@@ -8,7 +8,7 @@ export type AiMode = 'proxy' | 'direct' | 'local';
 export type PlanId = 'free' | 'monthly' | 'yearly';
 export type Verification = 'verified' | 'listing' | 'unverified';
 export type Service = 'physical' | 'tele' | 'lab';
-export type PhotoKind = 'meal' | 'pack' | 'document';
+export type PhotoKind = 'meal' | 'pack' | 'document' | 'skin';
 
 export interface Center {
   id: string;

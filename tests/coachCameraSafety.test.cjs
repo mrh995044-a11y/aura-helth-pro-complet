@@ -1,0 +1,16 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const ts = require('typescript');
+const Module = require('node:module');
+require.extensions['.ts'] = (m, filename) => m._compile(ts.transpileModule(fs.readFileSync(filename, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, filename);
+const load = Module._load;
+Module._load = function(request, ...args) { if (request === '@react-native-firebase/auth') return {}; return load.call(this, request, ...args); };
+const { buildHealthContext, localAnalysis } = require('../lib/ai.ts');
+Module._load = load;
+const opts = { vitals: [], meds: [], profile: {}, settings: { lang:'en', shareVitals:false, shareMeds:false, shareProfile:false }, photoKind:'skin', question:'Please describe the photo' };
+const prompt = buildHealthContext(opts);
+assert.match(prompt, /cannot identify an infection, pathogen or diagnosis/i);
+assert.match(prompt, /Do not identify a disease/i);
+const fallback = localAnalysis(opts);
+assert.match(fallback.text, /cannot see the photo or identify an infection/i);
+console.log('Skin photo instructions and offline fallback avoid pathogen identification');

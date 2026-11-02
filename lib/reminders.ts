@@ -75,21 +75,6 @@ export async function enableMedicationReminders(meds: Med[]): Promise<void> {
   await ensureAudibleChannel();
 }
 
-// An audible one-off test; this is not evidence that future daily alarms will
-// survive every device's battery, alarm, or notification settings.
-export async function testMedicationAlarm(): Promise<void> {
-  if (Platform.OS === 'web') throw new Error('Medication alarms are available in the installed mobile app.');
-  await channel();
-  const permission = await Notifications.requestPermissionsAsync();
-  if (!permission.granted) throw new Error('Notifications are blocked. Allow them in device settings.');
-  await ensureAudibleChannel();
-  await Notifications.scheduleNotificationAsync({
-    identifier: 'aura-medication-test',
-    content: { title: 'Medication alarm test', body: 'This is a test of your AuraHealth Pro medication alarm.', sound: SOUND },
-    trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 10, channelId: CHANNEL },
-  });
-}
-
 const BEDTIME_PREFIX = 'aura-bedtime:';
 let bedtimePending: Promise<void> = Promise.resolve();
 

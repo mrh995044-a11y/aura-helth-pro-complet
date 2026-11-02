@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { FlatList, Image, Pressable, TextInput, View } from 'react-native';
+import { Alert, FlatList, Image, Pressable, TextInput, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
+import { CoachCamera } from '../components/CoachCamera';
 import { Btn, Card, Pill, Sheet, Txt } from '../components/ui';
 import { useStore } from '../lib/store';
 import { C } from '../lib/theme';
@@ -27,6 +28,7 @@ export function CoachScreen() {
   const [pending, setPending] = useState<null | (() => void)>(null);
   const [photo, setPhoto] = useState<{ uri: string; base64: string; mime: string; kind: PhotoKind } | null>(null);
   const [err, setErr] = useState('');
+  const [cameraOpen, setCameraOpen] = useState(false);
 
   const askConsent = (fn: () => void) => {
     if (settings.aiConsent) {
@@ -70,7 +72,8 @@ export function CoachScreen() {
         });
         return;
       }
-      addChat({ id: uid(), role: 'assistant', text: res.text, at: Date.now(), source: 'gemini', photoKind });
+      const warning = photoKind === 'skin' ? 'A photo cannot identify an infection or pathogen. This is not a diagnosis; consult a clinician. If symptoms are severe or rapidly worsening, seek urgent medical care.\n\n' : '';
+      addChat({ id: uid(), role: 'assistant', text: warning + res.text, at: Date.now(), source: 'gemini', photoKind });
     } finally {
       setBusy(false);
     }
@@ -92,6 +95,17 @@ export function CoachScreen() {
     const q = symptoms.trim() ? `Analyse the last 14 days. Notes: ${symptoms}` : 'Analyse the last 14 days of shared logs.';
     addChat({ id: uid(), role: 'user', text: t('analyze_14'), at: Date.now(), source: 'user' });
     askConsent(() => reply(q));
+  };
+
+  const analyzeCameraPhoto = (image: { uri: string; base64: string; mime: string; kind: PhotoKind }) => {
+    Alert.alert('Send this photo to AuraCoach?', 'The photo and the health information you chose to share will be sent to the hosted AI service and Gemini. Images may be misread. Do not use this for diagnosis or emergencies.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Send and analyze', onPress: () => {
+        const question = image.kind === 'skin' ? 'Describe only visible features in this skin photo, with uncertainty. Do not name or identify any infection, pathogen, or diagnosis. Suggest when to consult a clinician and when urgent care is needed.' : 'Describe this photo for general wellness information. Do not diagnose or change treatment.';
+        addChat({ id: uid(), role: 'user', text: `Photo: ${image.kind}`, at: Date.now(), source: 'user', photoKind: image.kind });
+        askConsent(() => reply(question, image.kind, image));
+      } },
+    ]);
   };
 
   const pick = async (camera: boolean) => {
@@ -176,6 +190,9 @@ export function CoachScreen() {
           </View>
         ) : null}
         <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-end' }}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Open AuraCoach camera" onPress={() => setCameraOpen(true)} disabled={busy} style={iconBtn}>
+            <Ionicons name="camera-outline" size={18} color={C.mint} />
+          </Pressable>
           <Pressable onPress={() => pick(false)} style={iconBtn}>
             <Ionicons name="image-outline" size={18} color={C.violet} />
           </Pressable>
@@ -200,6 +217,7 @@ export function CoachScreen() {
           </Pressable>
         </View>
       </View>
+      <CoachCamera visible={cameraOpen} onClose={() => setCameraOpen(false)} onAnalyze={analyzeCameraPhoto} />
       <Sheet visible={consentOpen} onClose={() => setConsentOpen(false)} title={t('consent_title')}>
         <View style={{ gap: 10 }}>
           <Txt size={13} color={C.muted} style={{ lineHeight: 20 }}>

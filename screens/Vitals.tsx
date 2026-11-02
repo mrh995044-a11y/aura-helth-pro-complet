@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, AppState, FlatList, Pressable, ScrollView, View } from 'react-native';
+import { TimePicker24 } from '../components/TimePicker24';
 import { Pedometer } from 'expo-sensors';
 import * as ImagePicker from 'expo-image-picker';
 import { runGemini } from '../lib/ai';
@@ -255,7 +256,7 @@ export function VitalsScreen() {
             <Card style={{ gap: 8 }}>
               <Txt weight="800">Bedtime reminder</Txt>
               <Txt size={12} color={C.muted}>Choose a daily bedtime in 24-hour time. Sound and vibration depend on device settings; keep a backup reminder.</Txt>
-              <Field label="Bedtime (HH:MM)" value={bedtime} onChangeText={setBedtime} placeholder="22:00" />
+              <TimePicker24 label="Bedtime" value={bedtime} onChange={setBedtime} />
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <View style={{ flex: 1 }}><Btn label="Set bedtime" kind="soft" onPress={async () => {
                   try { await enableBedtimeReminder(bedtime); updateSettings({ bedtimeReminder: bedtime }); Alert.alert('Bedtime reminder', `Daily reminder set for ${bedtime}.`); }
